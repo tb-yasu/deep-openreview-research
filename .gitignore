@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Data files (large files that shouldn't be in Git)
+storage/papers_data/**/*.json
+storage/papers_data/**/*.log
+storage/papers_data/**/nohup.out
+
+# Cache
+storage/cache/**/*.json
+storage/cache/**/*.pkl
+
+# Generated outputs
+storage/outputs/*.md
+!storage/outputs/.gitkeep
+
+# Logs
+*.log
+nohup.out
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*.py
+debug_*.py
+
+# Development files
+CODE_QUALITY_REPORT.md
+*_REVIEW_FIX.md
+calculate_*.py
+create_*_from_checkpoint.py
+examples.sh
+
+# Keep directory structure
+!storage/papers_data/.gitkeep
+!storage/cache/.gitkeep
+!storage/outputs/.gitkeep
+
