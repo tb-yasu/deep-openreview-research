@@ -4,7 +4,6 @@ import json
 import re
 from typing import Any
 
-from langchain_openai import ChatOpenAI
 from loguru import logger
 
 from app.paper_review_workflow.models.state import (
@@ -22,6 +21,7 @@ from app.paper_review_workflow.constants import (
     MAX_AUTHORS_DISPLAY,
     MAX_KEYWORDS_DISPLAY,
 )
+from app.paper_review_workflow.llm_factory import create_chat_openai
 
 
 class UnifiedLLMEvaluatePapersNode:
@@ -50,7 +50,7 @@ class UnifiedLLMEvaluatePapersNode:
         model_name = self.llm_config.model.value
         
         if model_name.startswith("gpt"):
-            return ChatOpenAI(
+            return create_chat_openai(
                 model=model_name,
                 temperature=self.llm_config.temperature,
                 max_tokens=self.llm_config.max_tokens,
