@@ -124,7 +124,7 @@ Usage Examples:
         "--model",
         type=str,
         default="gpt-4o-mini",
-        choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"],
+        choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-5", "gpt-5-mini", "gpt-5-nano"],
         help="LLM model to use (default: gpt-4o-mini)",
     )
     parser.add_argument(
@@ -182,6 +182,9 @@ def get_llm_model(model_name: str) -> LLMModel:
         "gpt-4o": LLMModel.GPT4O,
         "gpt-4o-mini": LLMModel.GPT4O_MINI,
         "gpt-4-turbo": LLMModel.GPT4_TURBO,
+        "gpt-5": LLMModel.GPT5,
+        "gpt-5-mini": LLMModel.GPT5_MINI,
+        "gpt-5-nano": LLMModel.GPT5_NANO,
     }
     return model_map.get(model_name, LLMModel.GPT4O_MINI)
 
