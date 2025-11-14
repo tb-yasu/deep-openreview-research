@@ -103,8 +103,8 @@ Usage Examples:
     parser.add_argument(
         "--max-papers",
         type=int,
-        default=9999,
-        help="Maximum number of papers to search (default: 9999)",
+        default=15000,
+        help="Maximum number of papers to search (default: 15000)",
     )
     parser.add_argument(
         "--focus-on-novelty",

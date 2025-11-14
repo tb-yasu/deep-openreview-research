@@ -429,7 +429,11 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
     resume_from = 0
     
     # Check for checkpoint files (resume feature)
-    temp_files = sorted(data_dir.glob("all_papers_temp_*.json"))
+    # Sort by paper count (extracted from filename) to get the latest checkpoint
+    temp_files = sorted(
+        data_dir.glob("all_papers_temp_*.json"),
+        key=lambda f: int(f.stem.split('_')[-1])
+    )
     if temp_files and not force:
         latest_temp_file = temp_files[-1]
         logger.info(f"Resume: Found checkpoint {latest_temp_file.name}")
