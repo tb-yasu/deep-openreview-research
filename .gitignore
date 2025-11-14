@@ -76,7 +76,7 @@ ruff.toml
 
 # Internal documentation/notes (not for public repository)
 paper/
-docs/paper/
+docs/
 
 # Keep directory structure
 !storage/papers_data/.gitkeep
