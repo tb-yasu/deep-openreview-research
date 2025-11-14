@@ -67,6 +67,12 @@ CODE_QUALITY_REPORT.md
 calculate_*.py
 create_*_from_checkpoint.py
 examples.sh
+blog_draft.md
+quickstart.sh
+
+# Development configuration files
+mypy.ini
+ruff.toml
 
 # Keep directory structure
 !storage/papers_data/.gitkeep
