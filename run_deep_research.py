@@ -107,6 +107,12 @@ Usage Examples:
         help="Maximum number of papers to search (default: 15000)",
     )
     parser.add_argument(
+        "--include-rejected",
+        action="store_true",
+        default=False,
+        help="Include rejected papers in search (default: accepted papers only)",
+    )
+    parser.add_argument(
         "--focus-on-novelty",
         action="store_true",
         default=True,
@@ -221,6 +227,7 @@ def run_paper_review(args: argparse.Namespace) -> None:
             year=args.year,
             keywords=None,  # Use synonym matching
             max_papers=args.max_papers,
+            accepted_only=not args.include_rejected,  # Default: accepted papers only
             evaluation_criteria=EvaluationCriteria(
                 research_description=research_description,
                 research_interests=research_interests,
@@ -243,6 +250,7 @@ def run_paper_review(args: argparse.Namespace) -> None:
         logger.info(f"   LLM Model: {args.model}")
         logger.info(f"   Min Relevance Score: {args.min_relevance_score}")
         logger.info(f"   Max Papers: {args.max_papers}")
+        logger.info(f"   Search Scope: {'All papers (accepted & rejected)' if args.include_rejected else 'Accepted papers only'}")
         if not args.no_llm_eval:
             logger.info(f"   LLM Evaluation Target: Top {args.top_k} papers")
         else:
