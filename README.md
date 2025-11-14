@@ -2,7 +2,7 @@
 
 AI-Powered Deep Paper Review and Analysis Agent
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
 ## 📋 Overview
@@ -420,7 +420,24 @@ Contributions are welcome! Please follow these steps:
 
 ## 📄 License
 
-This project is released under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under **CC BY-NC-SA 4.0 (Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License)**.
+
+### ✅ You are free to:
+- Use for **academic and research purposes**
+- Share and adapt the source code
+- Use for personal learning and research
+
+### ❌ You may NOT:
+- Use for **commercial purposes**
+- Provide paid services using this software
+- Incorporate into commercial products
+
+### 📋 Under the following conditions:
+- **Attribution** - Give appropriate credit and provide a link to the license
+- **ShareAlike** - Distribute derivatives under the same license
+- **NonCommercial** - No commercial use allowed
+
+For commercial use inquiries, please contact us for a separate license agreement. See the [LICENSE](LICENSE) file for full details.
 
 ## 🙏 Acknowledgments
 
