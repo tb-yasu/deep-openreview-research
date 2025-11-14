@@ -9,6 +9,8 @@ AI-Powered Deep Paper Review and Analysis Agent
 
 **Deep OpenReview Research** is an AI agent that automatically searches and evaluates accepted papers from conferences, ranking them based on your research interests. By combining the OpenReview API with LLMs, it extracts deep information from papers including meta reviews, review details, and acceptance reasons to support efficient paper research.
 
+> **⚠️ Important Notice**: This tool is in the development stage, and quantitative validation of paper evaluation accuracy is a future challenge. Scoring methods and other aspects are subject to debate. AI-generated evaluation results should be used as reference information, and human final confirmation is recommended for important research decisions.
+
 ## ✨ Key Features
 
 - 🔍 **Automatic Paper Search**: Automatically search papers from specified conferences and years
