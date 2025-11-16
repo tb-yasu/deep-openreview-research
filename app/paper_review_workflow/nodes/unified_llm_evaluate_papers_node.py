@@ -227,6 +227,8 @@ You are an expert in evaluating machine learning research papers. Please compreh
 
 # 📄 Paper Information
 
+**Conference**: {paper.venue} {paper.year}
+
 **Title**: {paper.title}
 
 **Authors**: {', '.join(paper.authors[:MAX_AUTHORS_DISPLAY])}{'...' if len(paper.authors) > MAX_AUTHORS_DISPLAY else ''}
@@ -286,8 +288,8 @@ Integrate all reviews and summarize in 2-3 sentences:
 
 ## 6. Field Insights
 Explain in 1-2 sentences which review fields were primarily used:
-Example: "Primarily referenced ICML's overall_recommendation field (average 3.0) and summary"
-Example: "Primarily referenced NeurIPS's rating field (average 5.5) and strengths_and_weaknesses"
+Example: "Primarily referenced {paper.venue}'s overall_recommendation field (average 3.0) and summary"
+Example: "Primarily referenced {paper.venue}'s rating field (average 5.5) and strengths_and_weaknesses"
 
 # Output Format
 
@@ -299,7 +301,7 @@ Please output ONLY the following JSON format (no explanation needed):
   "impact": 0.68,
   "practicality": 0.80,
   "review_summary": "Reviewers highly praised the theoretical robustness of the method, while pointing out limitations in experiments. Program Chairs recommended acceptance based on balance of novelty and experimental quality.",
-  "field_insights": "Primarily referenced ICML's overall_recommendation (average 2.75), theoretical_claims, and experimental_designs_or_analyses fields.",
+  "field_insights": "Primarily referenced {paper.venue}'s overall_recommendation (average 2.75), theoretical_claims, and experimental_designs_or_analyses fields.",
   "rationale": "This paper specifically focuses on graph generation and is directly related to user's interests. New method with substantial experiments, but validation on large-scale datasets is limited."
 }}
 """
