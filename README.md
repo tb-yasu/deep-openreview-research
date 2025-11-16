@@ -15,6 +15,7 @@ AI-Powered Deep Paper Review and Analysis Agent
 
 - 🔍 **Automatic Paper Search**: Automatically search papers from specified conferences and years
 - 🤖 **Unified LLM Evaluation**: Comprehensive evaluation of relevance, novelty, impact, and practicality in a single call
+- ⚡ **Parallel Processing**: Execute up to 10 concurrent LLM evaluations for ~10x faster processing
 - 📊 **Scoring System**: Combined scoring using OpenReview evaluations and AI assessments
 - 🔑 **Synonym Expansion**: Automatically generate synonyms for keywords to expand search scope
 - 💬 **Natural Language Input**: Describe research interests in natural language
@@ -291,7 +292,7 @@ deep-openreview-research/
 3. **Paper Search**: Search papers from specified conference and year
 4. **Initial Evaluation**: Calculate relevance scores with keyword matching
 5. **Ranking**: Select top k papers based on scores
-6. **Unified LLM Evaluation**: Comprehensively evaluate in a single call:
+6. **Unified LLM Evaluation** (⚡Parallel Processing): Execute up to 10 concurrent evaluations, comprehensively evaluating in a single call:
    - Relevance score
    - Novelty score
    - Impact score
@@ -299,6 +300,7 @@ deep-openreview-research/
    - Review summary
    - Field insights
    - AI rationale
+   - **Processing Time**: Evaluate 100 papers in ~30 seconds (10x faster than sequential)
 7. **Re-ranking**: Final ranking based on LLM evaluation scores
 8. **Report Generation**: Generate detailed report (including review score averages)
 
@@ -400,6 +402,33 @@ python run_deep_research.py ... --top-k 50
 # Use faster model
 python run_deep_research.py ... --model gpt-4o-mini
 ```
+
+## ⚡ Performance and Optimization
+
+### Speed Improvement with Parallel Processing
+
+Parallel execution of LLM evaluations achieves significant processing time reduction:
+
+| Papers | Sequential | Parallel (10 concurrent) | Speedup |
+|--------|-----------|-------------------------|---------|
+| 10 papers | 30s | 3s | **10x** |
+| 50 papers | 150s (2.5 min) | 15s | **10x** |
+| 100 papers | 300s (5 min) | 30s | **10x** |
+
+*Assumes 3 seconds per paper (actual time depends on LLM response speed)
+
+### Optimization Mechanisms
+
+- **asyncio + Semaphore**: Efficiently executes up to 10 concurrent requests
+- **Rate Limiting**: Concurrent limit configured considering OpenAI API rate limits
+- **Error Handling**: Continues other evaluations even if some fail
+- **Caching Mechanism**: Avoids re-evaluation of same papers to reduce API calls
+
+### Tips for Reducing API Costs
+
+1. **Use smaller models**: `gpt-4o-mini` is fast and cost-effective
+2. **Limit top-k**: Appropriately restrict the number of papers to evaluate (default: 30)
+3. **Leverage cache**: Re-runs with same conference/year/keywords use cached results
 
 ## 🛠️ Tech Stack
 
