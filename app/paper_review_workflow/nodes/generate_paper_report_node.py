@@ -60,16 +60,28 @@ class GeneratePaperReportNode:
         lines.append("")
         lines.append(f"- **Conference**: {state.venue} {state.year}")
         lines.append(f"- **Keywords**: {state.keywords or 'Not specified'}")
-        lines.append(f"- **Papers Found**: {len(state.papers)} papers")
+        
+        # Add research description
+        criteria = state.evaluation_criteria
+        if criteria.research_description:
+            lines.append(f"- **Research Description**: {criteria.research_description}")
+        
+        lines.append("")
+        
+        # Hit counts details
+        lines.append("## Hit Counts")
+        lines.append("")
+        lines.append(f"- **Total Papers**: {len(state.papers)} papers")
         lines.append(f"- **Papers Evaluated**: {len(state.evaluated_papers)} papers")
         lines.append(f"- **Papers Ranked**: {len(state.ranked_papers)} papers")
+        if state.top_papers:
+            lines.append(f"- **Final Selected Papers**: {len(state.top_papers)} papers")
         lines.append("")
         
         # Evaluation criteria
-        criteria = state.evaluation_criteria
         lines.append("## Evaluation Criteria")
         lines.append("")
-        lines.append(f"- **Research Interests**: {', '.join(criteria.research_interests)}")
+        lines.append(f"- **Research Interest Keywords**: {', '.join(criteria.research_interests)}")
         lines.append(f"- **Min Relevance Score**: {criteria.min_relevance_score}")
         if criteria.min_rating:
             lines.append(f"- **Min Review Rating**: {criteria.min_rating}/10")

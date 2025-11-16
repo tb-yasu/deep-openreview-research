@@ -438,9 +438,18 @@ def run_paper_review(args: argparse.Namespace) -> None:
             output_dir.mkdir(parents=True, exist_ok=True)
             
             if args.output_file:
-                output_file = output_dir / args.output_file
+                base_output_file = output_dir / args.output_file
             else:
-                output_file = output_dir / f"paper_review_report_{args.venue}_{args.year}.md"
+                base_output_file = output_dir / f"paper_review_report_{args.venue}_{args.year}.md"
+            
+            # If file exists, save with timestamp to avoid overwriting
+            output_file = base_output_file
+            if output_file.exists():
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                stem = base_output_file.stem
+                suffix = base_output_file.suffix
+                output_file = output_dir / f"{stem}_{timestamp}{suffix}"
+                logger.info(f"📁 File already exists, saving with different name: {output_file.name}")
             
             output_file.write_text(paper_report, encoding="utf-8")
             
