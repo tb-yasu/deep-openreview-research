@@ -121,8 +121,19 @@ class UnifiedLLMEvaluatePapersNode:
             for i, paper in enumerate(papers)
         ]
         
-        # Execute all tasks (wait for results)
-        evaluated_papers = await asyncio.gather(*tasks, return_exceptions=False)
+        # Execute all tasks (continue other tasks even if errors occur)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Return only successfully completed papers (exclude Exceptions)
+        evaluated_papers = [
+            result for result in results
+            if not isinstance(result, Exception)
+        ]
+        
+        # Log the number of papers that failed
+        error_count = len(results) - len(evaluated_papers)
+        if error_count > 0:
+            logger.warning(f"⚠ {error_count}/{len(results)} papers failed during evaluation")
         
         return evaluated_papers
     
