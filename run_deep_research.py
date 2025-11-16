@@ -145,6 +145,12 @@ Usage Examples:
         default=1000,
         help="Maximum LLM tokens (default: 1000)",
     )
+    parser.add_argument(
+        "--max-concurrent",
+        type=int,
+        default=10,
+        help="Maximum concurrent LLM evaluations (default: 10, consider API rate limits)",
+    )
     
     # Output settings
     parser.add_argument(
@@ -207,6 +213,7 @@ def run_paper_review(args: argparse.Namespace) -> None:
             model=get_llm_model(args.model),
             temperature=args.temperature,
             max_tokens=args.max_tokens,
+            max_concurrent=args.max_concurrent,
         )
         
         # Create graph

@@ -72,7 +72,7 @@ class UnifiedLLMEvaluatePapersNode:
             Updated state dictionary
         """
         logger.info(f"🤖 Unified LLM evaluation for {len(state.ranked_papers)} papers using {self.llm_config.model.value}...")
-        logger.info(f"⚡ Parallel execution with max 10 concurrent requests")
+        logger.info(f"⚡ Parallel execution with max {self.llm_config.max_concurrent} concurrent requests")
         logger.info(f"📊 Retrieving all scores + review summary + field insights in a single call")
         
         # Execute in parallel using asyncio event loop
@@ -80,7 +80,7 @@ class UnifiedLLMEvaluatePapersNode:
             self._evaluate_papers_parallel(
                 state.ranked_papers,
                 state.evaluation_criteria,
-                max_concurrent=10,
+                max_concurrent=self.llm_config.max_concurrent,
             )
         )
         
