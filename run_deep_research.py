@@ -6,6 +6,7 @@ ranks papers related to research interests, and generates reports.
 
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
