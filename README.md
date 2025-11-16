@@ -182,7 +182,7 @@ python run_deep_research.py \
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--model` | gpt-5-mini | LLM model to use |
+| `--model` | gpt-4o-mini | LLM model to use |
 | `--temperature` | 0.0 | LLM temperature parameter (0.0-1.0) |
 | `--max-tokens` | 1000 | Maximum LLM tokens |
 
@@ -426,7 +426,7 @@ Parallel execution of LLM evaluations achieves significant processing time reduc
 
 ### Tips for Reducing API Costs
 
-1. **Use appropriate models**: Default `gpt-5-mini` is well-balanced (use `gpt-5-nano` for faster/cheaper, `gpt-4o` or `gpt-5` for higher quality)
+1. **Use appropriate models**: Default `gpt-4o-mini` provides best balance of quality and cost (use `gpt-4o` or `gpt-5` for higher quality)
 2. **Limit top-k**: Appropriately restrict the number of papers to evaluate (default: 30)
 3. **Leverage cache**: Re-runs with same conference/year/keywords use cached results
 
