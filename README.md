@@ -426,7 +426,7 @@ Parallel execution of LLM evaluations achieves significant processing time reduc
 
 ### Tips for Reducing API Costs
 
-1. **Use smaller models**: Default `gpt-5-nano` is fastest & cheapest (use `gpt-4o-mini` for higher quality)
+1. **Use smaller models**: Default `gpt-5-nano` is fastest & cheapest (use `gpt-4o` or `gpt-5` for higher quality)
 2. **Limit top-k**: Appropriately restrict the number of papers to evaluate (default: 30)
 3. **Leverage cache**: Re-runs with same conference/year/keywords use cached results
 
