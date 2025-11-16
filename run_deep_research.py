@@ -129,9 +129,9 @@ Usage Examples:
     parser.add_argument(
         "--model",
         type=str,
-        default="gpt-5-nano",
+        default="gpt-5-mini",
         choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-5", "gpt-5-mini", "gpt-5-nano"],
-        help="LLM model to use (default: gpt-5-nano)",
+        help="LLM model to use (default: gpt-5-mini)",
     )
     parser.add_argument(
         "--temperature",
