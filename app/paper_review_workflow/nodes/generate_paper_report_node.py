@@ -261,15 +261,14 @@ class GeneratePaperReportNode:
                 lines.append(abstract_short)
                 lines.append("")
                 
-                # Provide full text in collapsible section (only if longer)
-                if len(abstract) > len(abstract_short) + 10:  # Only if >10 chars longer
-                    lines.append("<details>")
-                    lines.append("<summary>📄 Show full abstract</summary>")
-                    lines.append("")
-                    lines.append(abstract)
-                    lines.append("")
-                    lines.append("</details>")
-                    lines.append("")
+                # Always provide full text in collapsible section (for consistency)
+                lines.append("<details>")
+                lines.append("<summary>📄 Show full abstract</summary>")
+                lines.append("")
+                lines.append(abstract)
+                lines.append("")
+                lines.append("</details>")
+                lines.append("")
             
             # Evaluation Highlights (merged AI evaluation + Review summary)
             if (ai_rationale and ai_rationale.strip()) or (review_summary and review_summary.strip()):
