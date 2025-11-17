@@ -176,7 +176,7 @@ class GeneratePaperReportNode:
             
             lines.append("")
             
-            # Score in one line (simplified)
+            # Score display with visual clarity (multiple lines)
             overall_score = paper.get('overall_score') if isinstance(paper, dict) else getattr(paper, 'overall_score', None)
             relevance_score = paper.get('relevance_score') if isinstance(paper, dict) else getattr(paper, 'relevance_score', None)
             novelty_score = paper.get('novelty_score') if isinstance(paper, dict) else getattr(paper, 'novelty_score', None)
@@ -184,42 +184,48 @@ class GeneratePaperReportNode:
             practicality_score = paper.get('practicality_score') if isinstance(paper, dict) else getattr(paper, 'practicality_score', None)
             rating_avg = paper.get('rating_avg') if isinstance(paper, dict) else getattr(paper, 'rating_avg', None)
             
-            score_parts = []
             if overall_score is not None:
-                score_parts.append(f"**Overall: {overall_score:.3f}**")
+                lines.append(f"**Overall: {overall_score:.3f}**")
+            
+            # Detail scores in one line
+            detail_scores = []
             if relevance_score is not None:
-                score_parts.append(f"Relevance: {relevance_score:.2f}")
+                detail_scores.append(f"Relevance: {relevance_score:.2f}")
             if novelty_score is not None:
-                score_parts.append(f"Novelty: {novelty_score:.2f}")
+                detail_scores.append(f"Novelty: {novelty_score:.2f}")
             if impact_score is not None:
-                score_parts.append(f"Impact: {impact_score:.2f}")
+                detail_scores.append(f"Impact: {impact_score:.2f}")
             if practicality_score is not None:
-                score_parts.append(f"Practicality: {practicality_score:.2f}")
+                detail_scores.append(f"Practicality: {practicality_score:.2f}")
+            
+            if detail_scores:
+                lines.append(" / ".join(detail_scores))
+            
+            # OpenReview rating on separate line
             if rating_avg is not None:
-                score_parts.append(f"OpenReview: {rating_avg:.2f}/10")
+                lines.append(f"OpenReview Rating: {rating_avg:.2f}/10")
             
-            if score_parts:
-                lines.append("**Scores**: " + " | ".join(score_parts))
-                lines.append("")
+            # Acceptance status emphasized
+            if decision and decision != "N/A":
+                decision_lower = decision.lower()
+                if "oral" in decision_lower:
+                    lines.append("Accepted: 🎤 **Oral**")
+                elif "spotlight" in decision_lower:
+                    lines.append("Accepted: ✨ **Spotlight**")
+                elif "poster" in decision_lower:
+                    lines.append("Accepted: 📊 **Poster**")
+                elif "accept" in decision_lower:
+                    lines.append("Accepted: ✅ **Accept**")
             
-            # Authors and Keywords (concise)
-            authors = paper.get('authors') if isinstance(paper, dict) else paper.authors
+            lines.append("")
+            
+            # Keywords only (author information removed)
             keywords = paper.get('keywords') if isinstance(paper, dict) else paper.keywords
-            
-            info_parts = []
-            if authors:
-                authors_display = ", ".join(authors[:3])
-                if len(authors) > 3:
-                    authors_display += f" +{len(authors) - 3} more"
-                info_parts.append(f"**Authors**: {authors_display}")
             if keywords:
-                info_parts.append(f"**Keywords**: {', '.join(keywords[:5])}")
-            
-            if info_parts:
-                lines.append(" | ".join(info_parts))
+                lines.append(f"**Keywords**: {', '.join(keywords[:5])}")
                 lines.append("")
             
-            # Abstract (shortened - first 300 characters or 3 sentences)
+            # Abstract (collapsible format for full text)
             abstract = paper.get('abstract') if isinstance(paper, dict) else getattr(paper, 'abstract', '')
             if abstract and abstract.strip():
                 lines.append("#### Abstract")
@@ -228,11 +234,22 @@ class GeneratePaperReportNode:
                 abstract_short = abstract[:300]
                 sentences = abstract_short.split('.')
                 if len(sentences) > 3:
-                    abstract_short = '.'.join(sentences[:3]) + '....'
+                    abstract_short = '.'.join(sentences[:3]) + '.'
                 elif len(abstract) > 300:
                     abstract_short += '...'
+                
                 lines.append(abstract_short)
                 lines.append("")
+                
+                # Provide full text in collapsible section
+                if len(abstract) > 300:
+                    lines.append("<details>")
+                    lines.append("<summary>📄 Show full abstract</summary>")
+                    lines.append("")
+                    lines.append(abstract)
+                    lines.append("")
+                    lines.append("</details>")
+                    lines.append("")
             
             # Evaluation Highlights (merged AI evaluation + Review summary)
             if (ai_rationale and ai_rationale.strip()) or (review_summary and review_summary.strip()):
