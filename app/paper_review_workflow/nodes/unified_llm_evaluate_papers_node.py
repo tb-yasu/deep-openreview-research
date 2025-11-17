@@ -256,7 +256,7 @@ You are an expert in evaluating machine learning research papers. Please compreh
 Please evaluate the following **4 scores** in the range 0.0-1.0:
 
 ## 1. Relevance
-Evaluate the relevance to user's research interests.
+Evaluate the specific relevance to research theme "{user_interests}".
 - Judge from paper keywords, title, and abstract
 - Reference "relevance" or "significance" fields in reviews if available
 
@@ -291,6 +291,13 @@ Explain in 1-2 sentences which review fields were primarily used:
 Example: "Primarily referenced {paper.venue}'s overall_recommendation field (average 3.0) and summary"
 Example: "Primarily referenced {paper.venue}'s rating field (average 5.5) and strengths_and_weaknesses"
 
+# ⚠ Important Instructions
+
+For **rationale** (evaluation reasoning), please pay attention to the following:
+- ❌ Avoid generic phrases like: "directly related to user's interests", "matches research interests"
+- ✅ Recommended: Describe paper-specific **concrete technical features** and **innovations**
+- Example: "Introduces a novel regularization technique for Transformer attention mechanism, improving long-range dependency learning. Achieves 3% improvement over BERT in experiments, but computational cost doubles."
+
 # Output Format
 
 Please output ONLY the following JSON format (no explanation needed):
@@ -302,7 +309,7 @@ Please output ONLY the following JSON format (no explanation needed):
   "practicality": 0.80,
   "review_summary": "Reviewers highly praised the theoretical robustness of the method, while pointing out limitations in experiments. Program Chairs recommended acceptance based on balance of novelty and experimental quality.",
   "field_insights": "Primarily referenced {paper.venue}'s overall_recommendation (average 2.75), theoretical_claims, and experimental_designs_or_analyses fields.",
-  "rationale": "This paper specifically focuses on graph generation and is directly related to user's interests. New method with substantial experiments, but validation on large-scale datasets is limited."
+  "rationale": "Introduces a novel regularization technique for Transformer attention mechanism, improving long-range dependency learning. Achieves 3% improvement over BERT in experiments, but computational cost doubles."
 }}
 """
         return prompt
