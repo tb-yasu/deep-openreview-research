@@ -223,19 +223,17 @@ class GeneratePaperReportNode:
             
             lines.append("")
             
-            # Author information (before keywords)
+            # Author information (before keywords) - display all
             authors = paper.get('authors') if isinstance(paper, dict) else paper.authors
             if authors:
-                authors_display = ", ".join(authors[:3])
-                if len(authors) > 3:
-                    authors_display += f" +{len(authors) - 3} more"
+                authors_display = ", ".join(authors)
                 lines.append(f"**Authors**: {authors_display}")
                 lines.append("")
             
-            # Keywords (after authors)
+            # Keywords (after authors) - display all
             keywords = paper.get('keywords') if isinstance(paper, dict) else paper.keywords
             if keywords:
-                lines.append(f"**Keywords**: {', '.join(keywords[:5])}")
+                lines.append(f"**Keywords**: {', '.join(keywords)}")
                 lines.append("")
             
             # Abstract (first 5-7 sentences, full text in collapsible section)
