@@ -219,7 +219,16 @@ class GeneratePaperReportNode:
             
             lines.append("")
             
-            # Keywords only (author information removed)
+            # Author information (before keywords)
+            authors = paper.get('authors') if isinstance(paper, dict) else paper.authors
+            if authors:
+                authors_display = ", ".join(authors[:3])
+                if len(authors) > 3:
+                    authors_display += f" +{len(authors) - 3} more"
+                lines.append(f"**Authors**: {authors_display}")
+                lines.append("")
+            
+            # Keywords (after authors)
             keywords = paper.get('keywords') if isinstance(paper, dict) else paper.keywords
             if keywords:
                 lines.append(f"**Keywords**: {', '.join(keywords[:5])}")
