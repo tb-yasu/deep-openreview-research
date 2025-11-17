@@ -142,125 +142,112 @@ class GeneratePaperReportNode:
             lines.append(f"### {rank}. {title}")
             lines.append("")
             
-            # Score display (unified LLM evaluation version)
-            lines.append("#### Scores")
-            lines.append("")
-            lines.append(f"| Item | Score |")
-            lines.append(f"|------|-------|")
-            
-            # Overall score (weighted average of 4 scores)
-            overall_score = paper.get('overall_score') if isinstance(paper, dict) else getattr(paper, 'overall_score', None)
-            if overall_score is not None:
-                lines.append(f"| **Overall Score** | **{overall_score:.3f}** |")
-            
-            # AI evaluation detailed scores
-            relevance_score = paper.get('relevance_score') if isinstance(paper, dict) else getattr(paper, 'relevance_score', None)
-            if relevance_score is not None:
-                lines.append(f"| 　├ Relevance | {relevance_score:.3f} |")
-            
-            novelty_score = paper.get('novelty_score') if isinstance(paper, dict) else getattr(paper, 'novelty_score', None)
-            if novelty_score is not None:
-                lines.append(f"| 　├ Novelty | {novelty_score:.3f} |")
-            
-            impact_score = paper.get('impact_score') if isinstance(paper, dict) else getattr(paper, 'impact_score', None)
-            if impact_score is not None:
-                lines.append(f"| 　├ Impact | {impact_score:.3f} |")
-            
-            practicality_score = paper.get('practicality_score') if isinstance(paper, dict) else getattr(paper, 'practicality_score', None)
-            if practicality_score is not None:
-                lines.append(f"| 　└ Practicality | {practicality_score:.3f} |")
-            
-            # OpenReview average rating
-            rating_avg = paper.get('rating_avg') if isinstance(paper, dict) else getattr(paper, 'rating_avg', None)
-            if rating_avg is not None:
-                lines.append(f"| OpenReview Rating | {rating_avg:.2f}/10 |")
-            lines.append("")
-            
-            # Acceptance decision and presentation format
+            # TL;DR (3-line summary)
+            ai_rationale = paper.get('ai_rationale') if isinstance(paper, dict) else getattr(paper, 'ai_rationale', None)
+            review_summary = paper.get('review_summary') if isinstance(paper, dict) else getattr(paper, 'review_summary', None)
             decision = paper.get('decision') if isinstance(paper, dict) else getattr(paper, 'decision', None)
+            
+            lines.append("#### 🎯 TL;DR")
+            lines.append("")
+            
+            # Extract key points from AI evaluation (first ~150 chars)
+            if ai_rationale and ai_rationale.strip():
+                tldr_text = ai_rationale[:150].split('.')[0] + '.'
+                lines.append(f"- **Proposal & Strengths**: {tldr_text}")
+            
+            # Extract evaluation from review summary
+            if review_summary and review_summary.strip():
+                review_tldr = review_summary[:100].split('.')[0] + '.'
+                lines.append(f"- **Review Evaluation**: {review_tldr}")
+            
+            # Decision
             if decision and decision != "N/A":
-                lines.append(f"**Acceptance Decision**: {decision}")
-                
-                # Extract presentation format (for NeurIPS, etc.)
                 decision_lower = decision.lower()
                 if "oral" in decision_lower:
-                    lines.append("  - 🎤 **Presentation**: Oral Presentation")
+                    lines.append(f"- **Decision**: Accepted (🎤 Oral)")
                 elif "spotlight" in decision_lower:
-                    lines.append("  - ✨ **Presentation**: Spotlight Presentation")
+                    lines.append(f"- **Decision**: Accepted (✨ Spotlight)")
                 elif "poster" in decision_lower:
-                    lines.append("  - 📊 **Presentation**: Poster Presentation")
+                    lines.append(f"- **Decision**: Accepted (📊 Poster)")
+                elif "accept" in decision_lower:
+                    lines.append(f"- **Decision**: Accepted")
+                else:
+                    lines.append(f"- **Decision**: {decision}")
+            
+            lines.append("")
+            
+            # Score in one line (simplified)
+            overall_score = paper.get('overall_score') if isinstance(paper, dict) else getattr(paper, 'overall_score', None)
+            relevance_score = paper.get('relevance_score') if isinstance(paper, dict) else getattr(paper, 'relevance_score', None)
+            novelty_score = paper.get('novelty_score') if isinstance(paper, dict) else getattr(paper, 'novelty_score', None)
+            impact_score = paper.get('impact_score') if isinstance(paper, dict) else getattr(paper, 'impact_score', None)
+            practicality_score = paper.get('practicality_score') if isinstance(paper, dict) else getattr(paper, 'practicality_score', None)
+            rating_avg = paper.get('rating_avg') if isinstance(paper, dict) else getattr(paper, 'rating_avg', None)
+            
+            score_parts = []
+            if overall_score is not None:
+                score_parts.append(f"**Overall: {overall_score:.3f}**")
+            if relevance_score is not None:
+                score_parts.append(f"Relevance: {relevance_score:.2f}")
+            if novelty_score is not None:
+                score_parts.append(f"Novelty: {novelty_score:.2f}")
+            if impact_score is not None:
+                score_parts.append(f"Impact: {impact_score:.2f}")
+            if practicality_score is not None:
+                score_parts.append(f"Practicality: {practicality_score:.2f}")
+            if rating_avg is not None:
+                score_parts.append(f"OpenReview: {rating_avg:.2f}/10")
+            
+            if score_parts:
+                lines.append("**Scores**: " + " | ".join(score_parts))
                 lines.append("")
             
-            # Authors
+            # Authors and Keywords (concise)
             authors = paper.get('authors') if isinstance(paper, dict) else paper.authors
-            if authors:
-                authors_display = ", ".join(authors[:5])
-                if len(authors) > 5:
-                    authors_display += f" +{len(authors) - 5} more"
-                lines.append(f"**Authors**: {authors_display}")
-                lines.append("")
-            
-            # Keywords
             keywords = paper.get('keywords') if isinstance(paper, dict) else paper.keywords
+            
+            info_parts = []
+            if authors:
+                authors_display = ", ".join(authors[:3])
+                if len(authors) > 3:
+                    authors_display += f" +{len(authors) - 3} more"
+                info_parts.append(f"**Authors**: {authors_display}")
             if keywords:
-                lines.append(f"**Keywords**: {', '.join(keywords[:8])}")
+                info_parts.append(f"**Keywords**: {', '.join(keywords[:5])}")
+            
+            if info_parts:
+                lines.append(" | ".join(info_parts))
                 lines.append("")
             
-            # Abstract (full text, as independent section)
+            # Abstract (shortened - first 300 characters or 3 sentences)
             abstract = paper.get('abstract') if isinstance(paper, dict) else getattr(paper, 'abstract', '')
             if abstract and abstract.strip():
                 lines.append("#### Abstract")
                 lines.append("")
-                lines.append(abstract)
+                # Display first 300 characters or first 3 sentences
+                abstract_short = abstract[:300]
+                sentences = abstract_short.split('.')
+                if len(sentences) > 3:
+                    abstract_short = '.'.join(sentences[:3]) + '....'
+                elif len(abstract) > 300:
+                    abstract_short += '...'
+                lines.append(abstract_short)
                 lines.append("")
             
-            # AI Evaluation (Unified LLM Evaluation)
-            ai_rationale = paper.get('ai_rationale') if isinstance(paper, dict) else getattr(paper, 'ai_rationale', None)
-            if ai_rationale and ai_rationale.strip():
-                lines.append("#### 🤖 AI Evaluation")
+            # Evaluation Highlights (merged AI evaluation + Review summary)
+            if (ai_rationale and ai_rationale.strip()) or (review_summary and review_summary.strip()):
+                lines.append("#### 📊 Evaluation Highlights")
                 lines.append("")
-                lines.append(ai_rationale)
-                lines.append("")
-            
-            # Review Summary
-            review_summary = paper.get('review_summary') if isinstance(paper, dict) else getattr(paper, 'review_summary', None)
-            if review_summary and review_summary.strip():
-                lines.append("#### 📊 Review Summary")
-                lines.append("")
-                lines.append(review_summary)
-                lines.append("")
-            
-            # Field Insights
-            field_insights = paper.get('field_insights') if isinstance(paper, dict) else getattr(paper, 'field_insights', None)
-            if field_insights and field_insights.strip():
-                lines.append("#### 🔍 Evaluation Data Sources")
-                lines.append("")
-                lines.append(field_insights)
-                lines.append("")
-            
-            # Meta Review (Area Chair Summary)
-            meta_review = paper.get('meta_review') if isinstance(paper, dict) else getattr(paper, 'meta_review', None)
-            if meta_review and meta_review.strip():
-                lines.append("#### 📋 Meta Review")
-                lines.append("")
-                # Limit length if too long (first ~800 characters)
-                if len(meta_review) > 800:
-                    lines.append(meta_review[:800] + "...")
-                else:
-                    lines.append(meta_review)
-                lines.append("")
-            
-            # Decision detailed comments
-            decision_comment = paper.get('decision_comment') if isinstance(paper, dict) else getattr(paper, 'decision_comment', None)
-            if decision_comment and decision_comment.strip():
-                lines.append("#### 📝 Acceptance Reason")
-                lines.append("")
-                # Limit length if too long
-                if len(decision_comment) > 600:
-                    lines.append(decision_comment[:600] + "...")
-                else:
-                    lines.append(decision_comment)
-                lines.append("")
+                
+                if ai_rationale and ai_rationale.strip():
+                    lines.append("**AI Analysis**:")
+                    lines.append(ai_rationale)
+                    lines.append("")
+                
+                if review_summary and review_summary.strip():
+                    lines.append("**Review Summary**:")
+                    lines.append(review_summary)
+                    lines.append("")
             
             # Review details (Strengths/Weaknesses) - Commented out (hidden per user request)
             # reviews = paper.get('reviews') if isinstance(paper, dict) else getattr(paper, 'reviews', [])
@@ -301,92 +288,10 @@ class GeneratePaperReportNode:
             #         lines.append(f"*{len(reviews) - 3} more review(s) omitted*")
             #         lines.append("")
             
-            # Display average review scores
-            reviews = paper.get('reviews') if isinstance(paper, dict) else getattr(paper, 'reviews', [])
-            if reviews and len(reviews) > 0:
-                lines.append("#### 📊 Average Review Scores")
-                lines.append("")
-                
-                # Collect numeric fields
-                score_fields = {}
-                for review in reviews:
-                    for key, value in review.items():
-                        # Only numeric or convertible to numeric fields
-                        if key in ['summary', 'strengths', 'weaknesses', 'detailed_comments', 
-                                  'main_review', 'review_text', 'comments', 'strengths_and_weaknesses']:
-                            continue  # Skip text fields
-                        
-                        try:
-                            # Try to convert to numeric
-                            if isinstance(value, (int, float)):
-                                numeric_value = float(value)
-                            elif isinstance(value, str) and value.strip():
-                                # Handle formats like "3.5/5"
-                                if '/' in value:
-                                    numeric_value = float(value.split('/')[0].strip())
-                                else:
-                                    numeric_value = float(value)
-                            else:
-                                continue
-                            
-                            if key not in score_fields:
-                                score_fields[key] = []
-                            score_fields[key].append(numeric_value)
-                        except (ValueError, TypeError):
-                            continue
-                
-                # Calculate and display averages
-                if score_fields:
-                    lines.append("| Item | Average | # Reviews |")
-                    lines.append("|------|---------|-----------|")
-                    
-                    # Display rating and confidence first
-                    priority_fields = ['rating', 'overall_recommendation', 'confidence']
-                    for field in priority_fields:
-                        if field in score_fields:
-                            avg_value = sum(score_fields[field]) / len(score_fields[field])
-                            count = len(score_fields[field])
-                            field_name = self._translate_field_name(field)
-                            lines.append(f"| {field_name} | {avg_value:.2f} | {count} |")
-                    
-                    # Display other fields in alphabetical order
-                    other_fields = sorted([f for f in score_fields.keys() if f not in priority_fields])
-                    for field in other_fields:
-                        avg_value = sum(score_fields[field]) / len(score_fields[field])
-                        count = len(score_fields[field])
-                        field_name = self._translate_field_name(field)
-                        lines.append(f"| {field_name} | {avg_value:.2f} | {count} |")
-                    
-                    lines.append("")
-                    lines.append(f"*Aggregated from {len(reviews)} review(s)*")
-                    lines.append("")
-            
-            # Author Final Remarks
-            author_remarks = paper.get('author_remarks') if isinstance(paper, dict) else getattr(paper, 'author_remarks', None)
-            if author_remarks and author_remarks.strip():
-                lines.append("#### 💬 Author Comments")
-                lines.append("")
-                # Limit length if too long
-                if len(author_remarks) > 400:
-                    lines.append(author_remarks[:400] + "...")
-                else:
-                    lines.append(author_remarks)
-                lines.append("")
-            
-            # LLM evaluation rationale
-            llm_rationale = paper.get('llm_rationale') if isinstance(paper, dict) else getattr(paper, 'llm_rationale', None)
-            if llm_rationale:
-                lines.append("#### AI Evaluation (Content Analysis)")
-                lines.append("")
-                lines.append(llm_rationale)
-                lines.append("")
-            
-            # Links
+            # Links (simplified)
             forum_url = paper.get('forum_url') if isinstance(paper, dict) else paper.forum_url
             pdf_url = paper.get('pdf_url') if isinstance(paper, dict) else paper.pdf_url
-            lines.append(f"**🔗 Links**:")
-            lines.append(f"- [OpenReview]({forum_url})")
-            lines.append(f"- [PDF]({pdf_url})")
+            lines.append(f"🔗 [OpenReview]({forum_url}) | [PDF]({pdf_url})")
             lines.append("")
             lines.append("---")
             lines.append("")
