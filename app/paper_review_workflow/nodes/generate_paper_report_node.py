@@ -106,19 +106,23 @@ class GeneratePaperReportNode:
                     lines.append("No synonyms (using original keyword only)")
                 lines.append("")
         
-        # Statistics
+        # Statistics (for all evaluated papers)
         if state.ranked_papers:
             scores = [p.overall_score for p in state.ranked_papers if p.overall_score]
             ratings = [p.rating_avg for p in state.ranked_papers if p.rating_avg]
             
-            lines.append("## Statistics")
+            lines.append("## 📊 Statistics for Evaluated Papers")
+            lines.append("")
+            lines.append(f"Evaluated: {len(state.ranked_papers)} papers")
             lines.append("")
             if scores:
                 lines.append(f"- **Average Overall Score**: {sum(scores) / len(scores):.3f}")
                 lines.append(f"- **Highest Score**: {max(scores):.3f}")
                 lines.append(f"- **Lowest Score**: {min(scores):.3f}")
             if ratings:
-                lines.append(f"- **Average Review Rating**: {sum(ratings) / len(ratings):.2f}/10")
+                lines.append(f"- **Average OpenReview Rating**: {sum(ratings) / len(ratings):.2f}")
+            lines.append("")
+            lines.append("*Note: The top papers shown below are selected from the above evaluated papers.*")
             lines.append("")
         
         # Top papers (from top_papers if available, otherwise from ranked_papers)
@@ -201,9 +205,9 @@ class GeneratePaperReportNode:
             if detail_scores:
                 lines.append(" / ".join(detail_scores))
             
-            # OpenReview rating on separate line
+            # OpenReview rating on separate line (removed /10 for scale consistency)
             if rating_avg is not None:
-                lines.append(f"OpenReview Rating: {rating_avg:.2f}/10")
+                lines.append(f"OpenReview: {rating_avg:.2f}")
             
             # Acceptance status emphasized
             if decision and decision != "N/A":
@@ -234,24 +238,31 @@ class GeneratePaperReportNode:
                 lines.append(f"**Keywords**: {', '.join(keywords[:5])}")
                 lines.append("")
             
-            # Abstract (collapsible format for full text)
+            # Abstract (first 5-7 sentences, full text in collapsible section)
             abstract = paper.get('abstract') if isinstance(paper, dict) else getattr(paper, 'abstract', '')
             if abstract and abstract.strip():
                 lines.append("#### Abstract")
                 lines.append("")
-                # Display first 300 characters or first 3 sentences
-                abstract_short = abstract[:300]
-                sentences = abstract_short.split('.')
-                if len(sentences) > 3:
-                    abstract_short = '.'.join(sentences[:3]) + '.'
-                elif len(abstract) > 300:
-                    abstract_short += '...'
+                
+                # Split by sentence ('. ') and display first 5-7 sentences
+                sentences = abstract.split('. ')
+                
+                # Extract first 5-7 sentences (adjust based on length)
+                if len(sentences) >= 7:
+                    abstract_short = '. '.join(sentences[:7]) + '.'
+                elif len(sentences) >= 5:
+                    abstract_short = '. '.join(sentences[:5]) + '.'
+                elif len(sentences) >= 3:
+                    abstract_short = '. '.join(sentences[:3]) + '.'
+                else:
+                    # If few sentences, display as is
+                    abstract_short = abstract
                 
                 lines.append(abstract_short)
                 lines.append("")
                 
-                # Provide full text in collapsible section
-                if len(abstract) > 300:
+                # Provide full text in collapsible section (only if longer)
+                if len(abstract) > len(abstract_short) + 10:  # Only if >10 chars longer
                     lines.append("<details>")
                     lines.append("<summary>📄 Show full abstract</summary>")
                     lines.append("")
