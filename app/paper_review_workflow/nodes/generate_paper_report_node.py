@@ -146,6 +146,19 @@ class GeneratePaperReportNode:
             lines.append(f"### {rank}. {title}")
             lines.append("")
             
+            # Author information - display all
+            authors = paper.get('authors') if isinstance(paper, dict) else paper.authors
+            if authors:
+                authors_display = ", ".join(authors)
+                lines.append(f"**Authors**: {authors_display}")
+                lines.append("")
+            
+            # Keywords - display all
+            keywords = paper.get('keywords') if isinstance(paper, dict) else paper.keywords
+            if keywords:
+                lines.append(f"**Keywords**: {', '.join(keywords)}")
+                lines.append("")
+            
             # TL;DR (3-line summary)
             ai_rationale = paper.get('ai_rationale') if isinstance(paper, dict) else getattr(paper, 'ai_rationale', None)
             review_summary = paper.get('review_summary') if isinstance(paper, dict) else getattr(paper, 'review_summary', None)
@@ -222,19 +235,6 @@ class GeneratePaperReportNode:
                     lines.append("Accepted: ✅ **Accept**")
             
             lines.append("")
-            
-            # Author information (before keywords) - display all
-            authors = paper.get('authors') if isinstance(paper, dict) else paper.authors
-            if authors:
-                authors_display = ", ".join(authors)
-                lines.append(f"**Authors**: {authors_display}")
-                lines.append("")
-            
-            # Keywords (after authors) - display all
-            keywords = paper.get('keywords') if isinstance(paper, dict) else paper.keywords
-            if keywords:
-                lines.append(f"**Keywords**: {', '.join(keywords)}")
-                lines.append("")
             
             # Abstract (first 5-7 sentences, full text in collapsible section)
             abstract = paper.get('abstract') if isinstance(paper, dict) else getattr(paper, 'abstract', '')
