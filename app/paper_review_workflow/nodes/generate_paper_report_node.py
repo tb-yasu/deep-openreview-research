@@ -222,18 +222,6 @@ class GeneratePaperReportNode:
             if rating_avg is not None:
                 lines.append(f"OpenReview: {rating_avg:.2f}")
             
-            # Acceptance status emphasized
-            if decision and decision != "N/A":
-                decision_lower = decision.lower()
-                if "oral" in decision_lower:
-                    lines.append("Accepted: 🎤 **Oral**")
-                elif "spotlight" in decision_lower:
-                    lines.append("Accepted: ✨ **Spotlight**")
-                elif "poster" in decision_lower:
-                    lines.append("Accepted: 📊 **Poster**")
-                elif "accept" in decision_lower:
-                    lines.append("Accepted: ✅ **Accept**")
-            
             lines.append("")
             
             # Abstract (first 5-7 sentences, full text in collapsible section)
