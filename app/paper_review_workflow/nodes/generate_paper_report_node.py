@@ -159,37 +159,39 @@ class GeneratePaperReportNode:
                 lines.append(f"**Keywords**: {', '.join(keywords)}")
                 lines.append("")
             
-            # TL;DR (3-line summary)
+            # Evaluation Summary (full AI analysis and review summary)
             ai_rationale = paper.get('ai_rationale') if isinstance(paper, dict) else getattr(paper, 'ai_rationale', None)
             review_summary = paper.get('review_summary') if isinstance(paper, dict) else getattr(paper, 'review_summary', None)
             decision = paper.get('decision') if isinstance(paper, dict) else getattr(paper, 'decision', None)
             
-            lines.append("#### 🎯 TL;DR")
+            lines.append("#### 📊 Evaluation Summary")
             lines.append("")
             
-            # Extract key points from AI evaluation (first ~150 chars)
+            # AI Analysis (full text)
             if ai_rationale and ai_rationale.strip():
-                tldr_text = ai_rationale[:150].split('.')[0] + '.'
-                lines.append(f"- **Proposal & Strengths**: {tldr_text}")
+                lines.append("**AI Analysis**:")
+                lines.append(ai_rationale)
+                lines.append("")
             
-            # Extract evaluation from review summary
+            # Review Summary (full text)
             if review_summary and review_summary.strip():
-                review_tldr = review_summary[:100].split('.')[0] + '.'
-                lines.append(f"- **Review Evaluation**: {review_tldr}")
+                lines.append("**Review Summary**:")
+                lines.append(review_summary)
+                lines.append("")
             
             # Decision
             if decision and decision != "N/A":
                 decision_lower = decision.lower()
                 if "oral" in decision_lower:
-                    lines.append(f"- **Decision**: Accepted (🎤 Oral)")
+                    lines.append("**Decision**: Accepted (🎤 Oral)")
                 elif "spotlight" in decision_lower:
-                    lines.append(f"- **Decision**: Accepted (✨ Spotlight)")
+                    lines.append("**Decision**: Accepted (✨ Spotlight)")
                 elif "poster" in decision_lower:
-                    lines.append(f"- **Decision**: Accepted (📊 Poster)")
+                    lines.append("**Decision**: Accepted (📊 Poster)")
                 elif "accept" in decision_lower:
-                    lines.append(f"- **Decision**: Accepted")
+                    lines.append("**Decision**: Accepted")
                 else:
-                    lines.append(f"- **Decision**: {decision}")
+                    lines.append(f"**Decision**: {decision}")
             
             lines.append("")
             
@@ -224,30 +226,11 @@ class GeneratePaperReportNode:
             
             lines.append("")
             
-            # Abstract (first 5-7 sentences, full text in collapsible section)
+            # Abstract (full text only, in collapsible section)
             abstract = paper.get('abstract') if isinstance(paper, dict) else getattr(paper, 'abstract', '')
             if abstract and abstract.strip():
                 lines.append("#### Abstract")
                 lines.append("")
-                
-                # Split by sentence ('. ') and display first 5-7 sentences
-                sentences = abstract.split('. ')
-                
-                # Extract first 5-7 sentences (adjust based on length)
-                if len(sentences) >= 7:
-                    abstract_short = '. '.join(sentences[:7]) + '.'
-                elif len(sentences) >= 5:
-                    abstract_short = '. '.join(sentences[:5]) + '.'
-                elif len(sentences) >= 3:
-                    abstract_short = '. '.join(sentences[:3]) + '.'
-                else:
-                    # If few sentences, display as is
-                    abstract_short = abstract
-                
-                lines.append(abstract_short)
-                lines.append("")
-                
-                # Always provide full text in collapsible section (for consistency)
                 lines.append("<details>")
                 lines.append("<summary>📄 Show full abstract</summary>")
                 lines.append("")
@@ -255,21 +238,6 @@ class GeneratePaperReportNode:
                 lines.append("")
                 lines.append("</details>")
                 lines.append("")
-            
-            # Evaluation Highlights (merged AI evaluation + Review summary)
-            if (ai_rationale and ai_rationale.strip()) or (review_summary and review_summary.strip()):
-                lines.append("#### 📊 Evaluation Highlights")
-                lines.append("")
-                
-                if ai_rationale and ai_rationale.strip():
-                    lines.append("**AI Analysis**:")
-                    lines.append(ai_rationale)
-                    lines.append("")
-                
-                if review_summary and review_summary.strip():
-                    lines.append("**Review Summary**:")
-                    lines.append(review_summary)
-                    lines.append("")
             
             # Review details (Strengths/Weaknesses) - Commented out (hidden per user request)
             # reviews = paper.get('reviews') if isinstance(paper, dict) else getattr(paper, 'reviews', [])
