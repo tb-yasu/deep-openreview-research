@@ -78,6 +78,10 @@ ruff.toml
 paper/
 docs/
 
+# Test directory (development only)
+tests/
+test_local/
+
 # Keep directory structure
 !storage/papers_data/.gitkeep
 !storage/cache/.gitkeep
