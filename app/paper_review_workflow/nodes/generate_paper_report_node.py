@@ -132,7 +132,7 @@ class GeneratePaperReportNode:
         # Use top_papers if available (LLM evaluated), otherwise use ranked_papers
         papers_to_display = state.top_papers if state.top_papers else state.ranked_papers[:10]
         
-        for i, paper_data in enumerate(papers_to_display[:20], 1):  # Top 20 papers
+        for i, paper_data in enumerate(papers_to_display, 1):  # All papers
             # Handle both dictionary and EvaluatedPaper object cases
             if isinstance(paper_data, dict):
                 paper = paper_data
