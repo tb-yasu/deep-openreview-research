@@ -173,8 +173,8 @@ python run_deep_research.py \
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--min-relevance-score` | 0.2 | Minimum relevance score (0.0-1.0) |
-| `--top-k` | 100 | Number of top papers for LLM evaluation |
-| `--max-papers` | 9999 | Maximum number of papers to search |
+| `--top-k` | 100 | Number of top papers for LLM evaluation (this number will be included in the final report) |
+| `--max-papers` | 15000 | Maximum number of papers to search |
 | `--focus-on-novelty` | True | Prioritize novelty |
 | `--focus-on-impact` | True | Prioritize impact |
 

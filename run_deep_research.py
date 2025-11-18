@@ -219,7 +219,7 @@ def run_paper_review(args: argparse.Namespace) -> None:
         
         # Create graph
         logger.info("🔧 Initializing workflow...")
-        graph = create_graph(llm_config=llm_config)
+        graph = create_graph(llm_config=llm_config, top_n=args.top_k)
         
         # Get research interests
         if args.research_description:
