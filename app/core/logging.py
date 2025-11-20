@@ -7,14 +7,14 @@ from app.domain.enums import BaseEnum
 
 
 class LogLevel(BaseEnum):
-    TRACE = "TRACE"  # 詳細なデバッグ情報。開発時のみ有効化し、運用時は無効。
-    DEBUG = "DEBUG"  # デバッグ用情報。問題調査時に有効化、運用時は無効。
-    INFO = "INFO"  # システムの通常動作を記録。常時有効。
+    TRACE = "TRACE"  # Detailed debug information. Enable only during development, disable in production.
+    DEBUG = "DEBUG"  # Debug information. Enable during troubleshooting, disable in production.
+    INFO = "INFO"  # Records normal system operations. Always enabled.
     WARNING = (
-        "WARNING"  # 注意が必要な事象。運用監視で確認し、3回/分の発生でアラート発生。
+        "WARNING"  # Events requiring attention. Monitor in operations, alert if 3/min.
     )
-    ERROR = "ERROR"  # 処理失敗や例外発生。即時調査・対応が必要。1回/分の発生でアラート発生。
-    CRITICAL = "CRITICAL"  # システム停止や重大障害。即時対応・復旧作業が必要。1回/分の発生でアラート発生。
+    ERROR = "ERROR"  # Processing failures or exceptions. Requires immediate investigation. Alert if 1/min.
+    CRITICAL = "CRITICAL"  # System outages or critical failures. Requires immediate response and recovery. Alert if 1/min.
 
 
 def set_logger() -> None:

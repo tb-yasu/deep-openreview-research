@@ -23,32 +23,32 @@ from app.paper_review_workflow.config import LLMConfig
 
 
 class RankPapersNode:
-    """評価済み論文をスコア順にランク付けするノード."""
+    """Node for ranking evaluated papers by score."""
     
     def __init__(self, llm_config: LLMConfig | None = None) -> None:
-        """RankPapersNodeを初期化.
+        """Initialize RankPapersNode.
         
         Args:
         ----
-            llm_config: LLM設定（並列数などを含む）
+            llm_config: LLM configuration (includes concurrency settings)
         """
-        self.llm = None  # 必要時に初期化（コスト削減）
+        self.llm = None  # Initialize when needed (cost reduction)
         self.llm_config = llm_config
     
     def __call__(self, state: PaperReviewAgentState) -> dict[str, Any]:
-        """論文ランキングを実行.
+        """Execute paper ranking.
         
         Args:
         ----
-            state: 現在の状態
+            state: Current state
             
         Returns:
         -------
-            更新された状態の辞書
+            Dictionary of updated state
         """
         logger.info(f"Ranking {len(state.evaluated_papers)} evaluated papers...")
         
-        # 評価基準に基づいてフィルタリング
+        # Filter based on evaluation criteria
         criteria = state.evaluation_criteria
         filtered_papers = [
             paper for paper in state.evaluated_papers
@@ -60,14 +60,14 @@ class RankPapersNode:
             f"meet the criteria"
         )
         
-        # 総合スコアでソート（降順）
+        # Sort by overall score (descending)
         ranked_papers = sorted(
             filtered_papers,
             key=lambda p: p.overall_score or 0.0,
             reverse=True,
         )
         
-        # 簡易LLMフィルタ（有効な場合）
+        # Preliminary LLM filter (if enabled)
         if criteria.enable_preliminary_llm_filter and len(ranked_papers) > 0:
             logger.info("🔍 Preliminary LLM filter enabled - evaluating top candidates...")
             ranked_papers = self._apply_preliminary_llm_filter(
@@ -75,7 +75,7 @@ class RankPapersNode:
                 criteria
             )
         
-        # top_kが指定されている場合、上位k件のみ選択
+        # Select top k papers if top_k is specified
         if criteria.top_k_papers is not None:
             selected_papers = ranked_papers[:criteria.top_k_papers]
             logger.info(
@@ -86,7 +86,7 @@ class RankPapersNode:
             selected_papers = ranked_papers
             logger.info(f"All {len(ranked_papers)} papers selected (no top_k limit)")
         
-        # 上位論文を辞書形式に変換（表示用）
+        # Convert top papers to dictionary format (for display)
         top_papers = convert_papers_to_dict_list(
             selected_papers,
             max_count=MAX_DISPLAY_PAPERS,
@@ -97,28 +97,28 @@ class RankPapersNode:
             logger.success(f"Top paper: {top_papers[0]['title'][:50]} (Score: {top_papers[0]['overall_score']:.3f})")
         
         return {
-            "ranked_papers": selected_papers,  # LLM評価に渡す論文リスト
+            "ranked_papers": selected_papers,  # Paper list to pass to LLM evaluation
             "top_papers": top_papers,
         }
     
     def _meets_criteria(self, paper: EvaluatedPaper, criteria: EvaluationCriteria) -> bool:
-        """論文が評価基準を満たすかチェック.
+        """Check if paper meets evaluation criteria.
         
         Args:
         ----
-            paper: 評価済み論文
-            criteria: 評価基準
+            paper: Evaluated paper
+            criteria: Evaluation criteria
             
         Returns:
         -------
-            基準を満たす場合True
+            True if criteria are met
         """
-        # 関連性スコアの最小値チェック
+        # Check minimum relevance score
         if paper.relevance_score is not None:
             if paper.relevance_score < criteria.min_relevance_score:
                 return False
         
-        # レビュースコアの最小値チェック
+        # Check minimum review score
         if criteria.min_rating is not None and paper.rating_avg is not None:
             if paper.rating_avg < criteria.min_rating:
                 return False
@@ -130,30 +130,30 @@ class RankPapersNode:
         ranked_papers: list[EvaluatedPaper], 
         criteria: EvaluationCriteria,
     ) -> list[EvaluatedPaper]:
-        """簡易LLM評価でrelevance_scoreを再計算し、再ソート（並列処理版）.
+        """Recalculate relevance_score with preliminary LLM evaluation and re-sort (parallel version).
         
         Args:
         ----
-            ranked_papers: ソート済み論文リスト
-            criteria: 評価基準
+            ranked_papers: Sorted paper list
+            criteria: Evaluation criteria
             
         Returns:
         -------
-            relevance_scoreを更新して再ソートした論文リスト
+            Paper list with updated relevance_score and re-sorted
         """
-        # 評価対象数を決定
+        # Determine number of papers to evaluate
         filter_count = min(
             criteria.preliminary_llm_filter_count,
             len(ranked_papers)
         )
         
-        # 並列数を決定（llm_configがあればそれを使用、なければデフォルト10）
+        # Determine concurrency (use llm_config if available, otherwise default to 10)
         max_concurrent = self.llm_config.max_concurrent if self.llm_config else 10
         
         logger.info(f"Evaluating top {filter_count} papers with LLM for better relevance scoring...")
         logger.info(f"⚡ Parallel execution with max {max_concurrent} concurrent requests")
         
-        # LLM初期化
+        # Initialize LLM
         if self.llm is None:
             self.llm = ChatOpenAI(
                 model="gpt-4o-mini",
@@ -161,24 +161,24 @@ class RankPapersNode:
                 max_tokens=PRELIMINARY_LLM_MAX_TOKENS,
             )
         
-        # 上位N件を並列LLM評価
+        # Evaluate top N papers in parallel with LLM
         target_papers = ranked_papers[:filter_count]
         updated_papers = asyncio.run(
             self._evaluate_relevance_parallel(target_papers, criteria, max_concurrent=max_concurrent)
         )
         
-        # 残りの論文（LLM評価しない）を追加
+        # Add remaining papers (not evaluated by LLM)
         remaining_papers = ranked_papers[filter_count:]
         all_papers = updated_papers + remaining_papers
         
-        # relevance_scoreで再ソート（overall_scoreに反映されているので、overall_scoreでソート）
+        # Re-sort by relevance_score (reflected in overall_score, so sort by overall_score)
         re_ranked_papers = sorted(
             all_papers,
             key=lambda p: p.overall_score or 0.0,
             reverse=True,
         )
         
-        # 成功数をカウント（デフォルトスコアでない論文）
+        # Count successes (papers not with default score)
         success_count = sum(1 for p in updated_papers if p.relevance_score != (ranked_papers[0].relevance_score or 0.0))
         
         logger.success(
@@ -193,41 +193,41 @@ class RankPapersNode:
         criteria: EvaluationCriteria,
         max_concurrent: int = 10,
     ) -> list[EvaluatedPaper]:
-        """複数論文の関連性を並列評価.
+        """Evaluate relevance of multiple papers in parallel.
         
         Args:
         ----
-            papers: 評価対象論文リスト
-            criteria: 評価基準
-            max_concurrent: 最大同時実行数
+            papers: List of papers to evaluate
+            criteria: Evaluation criteria
+            max_concurrent: Maximum concurrent executions
             
         Returns:
         -------
-            更新された論文リスト
+            Updated paper list
         """
-        # Semaphoreで同時実行数を制限
+        # Limit concurrency with Semaphore
         semaphore = asyncio.Semaphore(max_concurrent)
         
         async def evaluate_with_semaphore(paper, index, total):
             async with semaphore:
                 return await self._evaluate_single_relevance_async(paper, criteria, index, total)
         
-        # 全論文を並列実行
+        # Execute all papers in parallel
         tasks = [
             evaluate_with_semaphore(paper, i + 1, len(papers))
             for i, paper in enumerate(papers)
         ]
         
-        # 全タスクを実行（エラーが発生しても他のタスクは継続）
+        # Execute all tasks (continue even if errors occur)
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        # 正常に完了した論文のみを返す（Exceptionは除外）
+        # Return only successfully completed papers (exclude Exceptions)
         updated_papers = [
             result for result in results
             if not isinstance(result, Exception)
         ]
         
-        # エラーが発生した論文数をログ
+        # Log number of papers that failed
         error_count = len(results) - len(updated_papers)
         if error_count > 0:
             logger.warning(f"⚠ {error_count}/{len(results)} papers failed during relevance evaluation")
@@ -241,29 +241,29 @@ class RankPapersNode:
         index: int,
         total: int,
     ) -> EvaluatedPaper:
-        """単一論文の関連性を非同期で評価.
+        """Evaluate relevance of a single paper asynchronously.
         
         Args:
         ----
-            paper: 評価対象論文
-            criteria: 評価基準
-            index: 論文番号（ログ用）
-            total: 総論文数（ログ用）
+            paper: Paper to evaluate
+            criteria: Evaluation criteria
+            index: Paper number (for logging)
+            total: Total number of papers (for logging)
             
         Returns:
         -------
-            更新された論文
+            Updated paper
         """
         try:
-            # LLMで関連性を評価（非同期）
+            # Evaluate relevance with LLM (async)
             llm_relevance = await self._evaluate_relevance_with_llm_async(paper, criteria)
             
-            # relevance_scoreを更新
+            # Update relevance_score
             updated_paper = paper.model_copy(deep=True)
             old_score = paper.relevance_score or 0.0
             updated_paper.relevance_score = llm_relevance
             
-            # overall_scoreも更新（relevance_weightを考慮）
+            # Also update overall_score (considering relevance_weight)
             score_diff = llm_relevance - old_score
             updated_paper.overall_score = (paper.overall_score or 0.0) + score_diff * 0.4  # relevance_weight=0.4
             
@@ -274,7 +274,7 @@ class RankPapersNode:
             
         except Exception as e:
             logger.warning(f"Failed to LLM evaluate paper {paper.id}: {e}")
-            # 失敗時は元のスコアを保持
+            # Keep original score on failure
             return paper
     
     async def _evaluate_relevance_with_llm_async(
@@ -282,28 +282,28 @@ class RankPapersNode:
         paper: EvaluatedPaper,
         criteria: EvaluationCriteria,
     ) -> float:
-        """LLMで論文の関連性を簡易評価（非同期版）.
+        """Quickly evaluate paper relevance with LLM (async version).
         
         Args:
         ----
-            paper: 評価対象論文
-            criteria: 評価基準
+            paper: Paper to evaluate
+            criteria: Evaluation criteria
             
         Returns:
         -------
-            関連性スコア（0.0-1.0）
+            Relevance score (0.0-1.0)
         """
-        # アブストラクトを短縮
+        # Shorten abstract
         abstract_short = (
             paper.abstract[:ABSTRACT_SHORT_LENGTH] + 
             ("..." if len(paper.abstract) > ABSTRACT_SHORT_LENGTH else "")
         )
         
-        # ユーザーの興味を文字列化
+        # Convert user interests to string
         interests_str = ", ".join(criteria.research_interests)
         user_description = criteria.research_description or f"Keywords: {interests_str}"
         
-        # プロンプトを作成
+        # Create prompt
         prompt = f"""
 Evaluate how relevant the following paper is to the user's research interests on a scale of 0.0-1.0.
 
@@ -325,11 +325,11 @@ Evaluate how relevant the following paper is to the user's research interests on
 Output only the score in the range of 0.0-1.0 (e.g., 0.85)
 """
         
-        # LLMに非同期で問い合わせ
+        # Query LLM asynchronously
         response = await self.llm.ainvoke(prompt)
         response_text = response.content.strip()
         
-        # スコアを抽出
+        # Extract score
         score_match = re.search(r'(0\.\d+|1\.0|0|1)', response_text)
         if score_match:
             score = float(score_match.group(1))
@@ -343,25 +343,25 @@ Output only the score in the range of 0.0-1.0 (e.g., 0.85)
         paper: EvaluatedPaper, 
         criteria: EvaluationCriteria,
     ) -> float:
-        """LLMで論文の関連性を簡易評価.
+        """Quickly evaluate paper relevance with LLM.
         
         Args:
         ----
-            paper: 評価対象論文
-            criteria: 評価基準
+            paper: Paper to evaluate
+            criteria: Evaluation criteria
             
         Returns:
         -------
-            関連性スコア（0.0-1.0）
+            Relevance score (0.0-1.0)
         """
-        # アブストラクトを短縮
+        # Shorten abstract
         abstract_short = (
             paper.abstract[:ABSTRACT_SHORT_LENGTH] + 
             ("..." if len(paper.abstract) > ABSTRACT_SHORT_LENGTH else "")
         )
         keywords_str = ", ".join(paper.keywords[:MAX_KEYWORDS_DISPLAY])
         
-        # research_description がない場合は research_interests をフォールバック
+        # Fallback to research_interests if research_description is not available
         research_interests_str = ", ".join(criteria.research_interests)
         user_interests = criteria.research_description or f"Keywords: {research_interests_str}"
         
@@ -389,12 +389,12 @@ Return ONLY a single number between 0.0 and 1.0 (e.g., "0.85"). No other text.
             response = self.llm.invoke(prompt)
             response_text = response.content.strip()
             
-            # 数値を抽出
-            # "0.85"のような形式、または"The relevance is 0.85"のような形式に対応
+            # Extract numeric value
+            # Handle formats like "0.85" or "The relevance is 0.85"
             match = re.search(r'(\d+\.?\d*)', response_text)
             if match:
                 score = float(match.group(1))
-                # 0-1の範囲に制限
+                # Limit to 0-1 range
                 score = max(0.0, min(1.0, score))
                 return score
             else:

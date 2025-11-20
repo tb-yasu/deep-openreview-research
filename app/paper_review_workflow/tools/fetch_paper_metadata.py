@@ -10,40 +10,40 @@ from loguru import logger
 
 @tool
 def fetch_paper_metadata(paper_id: str) -> str:
-    """OpenReview APIを使用して、指定された論文IDの詳細メタデータを取得します.
+    """Fetch detailed metadata for specified paper ID using OpenReview API.
 
     Args:
     ----
-        paper_id (str): OpenReviewの論文ID（例: 'abc123def456'）
+        paper_id (str): OpenReview paper ID (e.g., 'abc123def456')
 
     Returns:
     -------
-        str: 論文の詳細メタデータのJSON。以下の情報が含まれます：
-            - id: 論文ID
-            - title: 論文タイトル
-            - authors: 著者リスト
-            - abstract: アブストラクト
-            - keywords: キーワードリスト
-            - reviews: レビュー情報のリスト
-            - rating_avg: 平均評価スコア
-            - confidence_avg: 平均信頼度スコア
-            - decision: 採択/不採択の判定
+        str: JSON of detailed paper metadata. Includes:
+            - id: Paper ID
+            - title: Paper title
+            - authors: Author list
+            - abstract: Abstract
+            - keywords: Keyword list
+            - reviews: List of review information
+            - rating_avg: Average rating score
+            - confidence_avg: Average confidence score
+            - decision: Acceptance/rejection decision
             - pdf_url: PDF URL
-            - forum_url: フォーラムURL
+            - forum_url: Forum URL
 
     """
     try:
-        # OpenReview APIクライアントを初期化
+        # Initialize OpenReview API client
         client = openreview.api.OpenReviewClient(baseurl="https://api2.openreview.net")
 
-        # 論文情報を取得
+        # Get paper information
         logger.info(f"Fetching metadata for paper: {paper_id}")
         note = client.get_note(paper_id)
 
-        # レビュー情報を取得
+        # Get review information
         reviews = client.get_notes(forum=paper_id, invitation=".*Review$")
         
-        # 評価スコアを集計
+        # Aggregate evaluation scores
         ratings: list[float] = []
         confidences: list[float] = []
         review_list: list[dict[str, Any]] = []
@@ -54,7 +54,7 @@ def fetch_paper_metadata(paper_id: str) -> str:
             
             if isinstance(rating, dict) and "value" in rating:
                 try:
-                    # "8: accept" のような形式から数値を抽出
+                    # Extract numeric value from format like "8: accept"
                     rating_value = float(str(rating["value"]).split(":")[0].strip())
                     ratings.append(rating_value)
                 except (ValueError, IndexError):
@@ -84,14 +84,14 @@ def fetch_paper_metadata(paper_id: str) -> str:
                 "weaknesses": weaknesses_value,
             })
 
-        # 採択判定を取得
+        # Get acceptance decision
         decisions = client.get_notes(forum=paper_id, invitation=".*Decision$")
         decision = "N/A"
         if decisions:
             decision_content = decisions[0].content.get("decision", {})
             decision = decision_content.get("value", "N/A") if isinstance(decision_content, dict) else str(decision_content)
 
-        # メタデータを構築
+        # Build metadata
         title = note.content.get("title", {})
         title_value = title.get("value", "") if isinstance(title, dict) else str(title)
         

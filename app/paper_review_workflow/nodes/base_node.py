@@ -9,51 +9,51 @@ from app.paper_review_workflow.models.state import PaperReviewAgentState
 
 
 class BaseNode(ABC):
-    """ワークフローノードの基底クラス.
+    """Base class for workflow nodes.
     
-    全てのノードはこのクラスを継承し、__call__メソッドを実装する必要があります。
+    All nodes must inherit from this class and implement the __call__ method.
     """
     
     def __init__(self) -> None:
-        """ベースノードを初期化."""
+        """Initialize base node."""
         self.logger = logger
     
     @abstractmethod
     def __call__(self, state: PaperReviewAgentState) -> dict[str, Any]:
-        """ノードの処理を実行.
+        """Execute node processing.
         
         Args:
         ----
-            state: 現在のワークフロー状態
+            state: Current workflow state
             
         Returns:
         -------
-            更新する状態の辞書
+            Dictionary of state updates
         """
         raise NotImplementedError
     
     @property
     def name(self) -> str:
-        """ノードの名前を取得."""
+        """Get node name."""
         return self.__class__.__name__
     
     def log_start(self, message: str) -> None:
-        """ノード開始ログを出力."""
+        """Output node start log."""
         self.logger.info(f"[{self.name}] {message}")
     
     def log_success(self, message: str) -> None:
-        """ノード成功ログを出力."""
+        """Output node success log."""
         self.logger.success(f"[{self.name}] {message}")
     
     def log_error(self, message: str) -> None:
-        """ノードエラーログを出力."""
+        """Output node error log."""
         self.logger.error(f"[{self.name}] {message}")
     
     def log_warning(self, message: str) -> None:
-        """ノード警告ログを出力."""
+        """Output node warning log."""
         self.logger.warning(f"[{self.name}] {message}")
     
     def log_debug(self, message: str) -> None:
-        """ノードデバッグログを出力."""
+        """Output node debug log."""
         self.logger.debug(f"[{self.name}] {message}")
 

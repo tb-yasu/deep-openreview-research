@@ -10,50 +10,50 @@ from loguru import logger
 
 
 class CacheManager:
-    """OpenReview APIレスポンスのキャッシュを管理."""
+    """Manages cache for OpenReview API responses."""
     
     def __init__(
         self,
         cache_dir: str = "storage/cache",
         ttl_hours: int = 24,
     ) -> None:
-        """CacheManagerを初期化.
+        """Initialize CacheManager.
         
         Args:
         ----
-            cache_dir: キャッシュディレクトリのパス
-            ttl_hours: キャッシュの有効時間（時間単位）
+            cache_dir: Path to cache directory
+            ttl_hours: Cache validity period (in hours)
         """
         self.cache_dir = Path(cache_dir)
         self.ttl_hours = ttl_hours
         self.cache_dir.mkdir(parents=True, exist_ok=True)
     
     def _generate_cache_key(self, **kwargs: Any) -> str:
-        """キャッシュキーを生成.
+        """Generate cache key.
         
         Args:
         ----
-            **kwargs: キーの生成に使用するパラメータ
+            **kwargs: Parameters used to generate the key
             
         Returns:
         -------
-            ハッシュ化されたキャッシュキー
+            Hashed cache key
         """
-        # 辞書をソートして一貫性のある文字列を生成
+        # Sort dictionary to generate consistent string
         key_str = json.dumps(kwargs, sort_keys=True, ensure_ascii=False)
         return hashlib.md5(key_str.encode()).hexdigest()
     
     def _get_cache_path(self, cache_key: str, prefix: str = "") -> Path:
-        """キャッシュファイルのパスを取得.
+        """Get cache file path.
         
         Args:
         ----
-            cache_key: キャッシュキー
-            prefix: ファイル名のプレフィックス
+            cache_key: Cache key
+            prefix: Filename prefix
             
         Returns:
         -------
-            キャッシュファイルのパス
+            Cache file path
         """
         if prefix:
             filename = f"{prefix}_{cache_key}.json"
@@ -62,36 +62,36 @@ class CacheManager:
         return self.cache_dir / filename
     
     def _is_cache_valid(self, cache_path: Path) -> bool:
-        """キャッシュが有効かチェック.
+        """Check if cache is valid.
         
         Args:
         ----
-            cache_path: キャッシュファイルのパス
+            cache_path: Cache file path
             
         Returns:
         -------
-            キャッシュが有効な場合True
+            True if cache is valid
         """
         if not cache_path.exists():
             return False
         
-        # ファイルの更新時刻を取得
+        # Get file modification time
         mtime = datetime.fromtimestamp(cache_path.stat().st_mtime)
         age = datetime.now() - mtime
         
         return age < timedelta(hours=self.ttl_hours)
     
     def get(self, prefix: str = "", **kwargs: Any) -> str | None:
-        """キャッシュからデータを取得.
+        """Get data from cache.
         
         Args:
         ----
-            prefix: キャッシュファイルのプレフィックス
-            **kwargs: キャッシュキーの生成に使用するパラメータ
+            prefix: Cache file prefix
+            **kwargs: Parameters used to generate cache key
             
         Returns:
         -------
-            キャッシュされたデータ（JSON文字列）、存在しない場合はNone
+            Cached data (JSON string), None if not found
         """
         cache_key = self._generate_cache_key(**kwargs)
         cache_path = self._get_cache_path(cache_key, prefix)
@@ -104,13 +104,13 @@ class CacheManager:
         return None
     
     def set(self, data: str, prefix: str = "", **kwargs: Any) -> None:
-        """データをキャッシュに保存.
+        """Save data to cache.
         
         Args:
         ----
-            data: 保存するデータ（JSON文字列）
-            prefix: キャッシュファイルのプレフィックス
-            **kwargs: キャッシュキーの生成に使用するパラメータ
+            data: Data to save (JSON string)
+            prefix: Cache file prefix
+            **kwargs: Parameters used to generate cache key
         """
         cache_key = self._generate_cache_key(**kwargs)
         cache_path = self._get_cache_path(cache_key, prefix)
@@ -119,15 +119,15 @@ class CacheManager:
         logger.debug(f"Cache saved: {cache_path.name}")
     
     def clear(self, prefix: str = "") -> int:
-        """キャッシュをクリア.
+        """Clear cache.
         
         Args:
         ----
-            prefix: 削除するキャッシュファイルのプレフィックス（指定しない場合は全て削除）
+            prefix: Prefix of cache files to delete (delete all if not specified)
             
         Returns:
         -------
-            削除したファイル数
+            Number of files deleted
         """
         if prefix:
             pattern = f"{prefix}_*.json"
@@ -143,11 +143,11 @@ class CacheManager:
         return deleted
     
     def get_cache_info(self) -> dict[str, Any]:
-        """キャッシュ情報を取得.
+        """Get cache information.
         
         Returns:
         -------
-            キャッシュ情報の辞書
+            Dictionary of cache information
         """
         cache_files = list(self.cache_dir.glob("*.json"))
         valid_files = [f for f in cache_files if self._is_cache_valid(f)]

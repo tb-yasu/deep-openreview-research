@@ -1,37 +1,37 @@
 """Constants for paper review workflow."""
 
-# ランキング関連
-DEFAULT_TOP_N_PAPERS = 20  # デフォルトのトップN論文数
-MAX_DISPLAY_PAPERS = 20    # 表示する最大論文数
+# Ranking related
+DEFAULT_TOP_N_PAPERS = 20  # Default number of top N papers
+MAX_DISPLAY_PAPERS = 20    # Maximum number of papers to display
 
-# LLM評価関連
-DEFAULT_LLM_MAX_TOKENS = 1000      # LLM評価のデフォルト最大トークン数
-DEFAULT_LLM_TEMPERATURE = 0.0      # LLM評価のデフォルト温度
-DEFAULT_LLM_TIMEOUT = 60           # LLM評価のデフォルトタイムアウト（秒）
-PRELIMINARY_LLM_MAX_TOKENS = 50    # 簡易LLM評価の最大トークン数
+# LLM evaluation related
+DEFAULT_LLM_MAX_TOKENS = 1000      # Default maximum tokens for LLM evaluation
+DEFAULT_LLM_TEMPERATURE = 0.0      # Default temperature for LLM evaluation
+DEFAULT_LLM_TIMEOUT = 60           # Default timeout for LLM evaluation (seconds)
+PRELIMINARY_LLM_MAX_TOKENS = 50    # Maximum tokens for preliminary LLM evaluation
 
-# テキスト処理関連
-ABSTRACT_SHORT_LENGTH = 300        # アブストラクト短縮の文字数
-MAX_KEYWORDS_DISPLAY = 8           # 表示する最大キーワード数
-MAX_AUTHORS_DISPLAY = 5            # 表示する最大著者数
-MAX_RATIONALE_LENGTH = 500         # 評価理由の最大文字数
+# Text processing related
+ABSTRACT_SHORT_LENGTH = 300        # Character count for shortened abstract
+MAX_KEYWORDS_DISPLAY = 8           # Maximum number of keywords to display
+MAX_AUTHORS_DISPLAY = 5            # Maximum number of authors to display
+MAX_RATIONALE_LENGTH = 500         # Maximum character count for evaluation rationale
 
-# 同義語生成関連
-SYNONYMS_LLM_MAX_TOKENS = 200      # 同義語生成の最大トークン数
-SYNONYMS_COUNT_MIN = 3             # 最小同義語数
-SYNONYMS_COUNT_MAX = 5             # 最大同義語数
+# Synonym generation related
+SYNONYMS_LLM_MAX_TOKENS = 200      # Maximum tokens for synonym generation
+SYNONYMS_COUNT_MIN = 3             # Minimum number of synonyms
+SYNONYMS_COUNT_MAX = 5             # Maximum number of synonyms
 
-# キャッシュ関連
-DEFAULT_CACHE_TTL_HOURS = 24       # キャッシュのデフォルトTTL（時間）
-CACHE_DIR_NAME = "storage/cache"   # キャッシュディレクトリ名
+# Cache related
+DEFAULT_CACHE_TTL_HOURS = 24       # Default TTL for cache (hours)
+CACHE_DIR_NAME = "storage/cache"   # Cache directory name
 
-# スコアリング関連
-MIN_SCORE = 0.0                    # 最小スコア値
-MAX_SCORE = 1.0                    # 最大スコア値
-NEURIPS_RATING_SCALE = 10.0        # NeurIPSのレーティングスケール
+# Scoring related
+MIN_SCORE = 0.0                    # Minimum score value
+MAX_SCORE = 1.0                    # Maximum score value
+NEURIPS_RATING_SCALE = 10.0        # NeurIPS rating scale
 
-# 関連性スコア計算の重み
-RELEVANCE_KEYWORD_WEIGHT = 0.70    # 論文keywordマッチの重み
-RELEVANCE_TEXT_WEIGHT = 0.20       # タイトル/アブストラクトマッチの重み
-RELEVANCE_COVERAGE_WEIGHT = 0.10   # カバレッジの重み
+# Weights for relevance score calculation
+RELEVANCE_KEYWORD_WEIGHT = 0.70    # Weight for paper keyword match
+RELEVANCE_TEXT_WEIGHT = 0.20       # Weight for title/abstract match
+RELEVANCE_COVERAGE_WEIGHT = 0.10   # Weight for coverage
 

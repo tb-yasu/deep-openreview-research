@@ -13,7 +13,7 @@ from app.paper_review_workflow.tools.cache_manager import CacheManager
 from app.paper_review_workflow.constants import DEFAULT_CACHE_TTL_HOURS, CACHE_DIR_NAME
 
 
-# グローバルCacheManagerインスタンス（互換性のため）
+# Global CacheManager instance (for compatibility)
 _default_cache_manager = CacheManager(
     cache_dir=CACHE_DIR_NAME,
     ttl_hours=DEFAULT_CACHE_TTL_HOURS,
@@ -21,41 +21,41 @@ _default_cache_manager = CacheManager(
 
 
 def get_cache_key(*args: Any) -> str:
-    """キャッシュキーを生成.
+    """Generate cache key.
     
     Args:
     ----
-        *args: キャッシュキーの元となる値
+        *args: Values used to generate cache key
         
     Returns:
     -------
-        ハッシュ化されたキャッシュキー
+        Hashed cache key
         
     Note:
     ----
-        この関数は後方互換性のために残されています。
-        新しいコードではCacheManagerを直接使用してください。
+        This function is kept for backward compatibility.
+        New code should use CacheManager directly.
     """
     key_string = "_".join(str(arg) for arg in args if arg is not None)
     return hashlib.md5(key_string.encode()).hexdigest()
 
 
 def get_cached_data(cache_key: str, cache_type: str = "papers") -> dict[str, Any] | None:
-    """キャッシュからデータを取得.
+    """Get data from cache.
     
     Args:
     ----
-        cache_key: キャッシュキー
-        cache_type: キャッシュの種類（"papers", "metadata"）
+        cache_key: Cache key
+        cache_type: Cache type ("papers", "metadata")
         
     Returns:
     -------
-        キャッシュされたデータ、存在しない場合はNone
+        Cached data, None if not found
         
     Note:
     ----
-        この関数は後方互換性のために残されています。
-        新しいコードではCacheManagerを直接使用してください。
+        This function is kept for backward compatibility.
+        New code should use CacheManager directly.
     """
     import json
     result = _default_cache_manager.get(prefix=cache_type, cache_key=cache_key)
@@ -69,18 +69,18 @@ def save_to_cache(
     data: Any,
     cache_type: str = "papers",
 ) -> None:
-    """データをキャッシュに保存.
+    """Save data to cache.
     
     Args:
     ----
-        cache_key: キャッシュキー
-        data: 保存するデータ
-        cache_type: キャッシュの種類（"papers", "metadata"）
+        cache_key: Cache key
+        data: Data to save
+        cache_type: Cache type ("papers", "metadata")
         
     Note:
     ----
-        この関数は後方互換性のために残されています。
-        新しいコードではCacheManagerを直接使用してください。
+        This function is kept for backward compatibility.
+        New code should use CacheManager directly.
     """
     import json
     if isinstance(data, str):
@@ -94,16 +94,16 @@ def save_to_cache(
 
 
 def clear_cache(cache_type: str | None = None) -> None:
-    """キャッシュをクリア.
+    """Clear cache.
     
     Args:
     ----
-        cache_type: クリアするキャッシュの種類。Noneの場合は全てクリア
+        cache_type: Type of cache to clear. Clear all if None
         
     Note:
     ----
-        この関数は後方互換性のために残されています。
-        新しいコードではCacheManagerを直接使用してください。
+        This function is kept for backward compatibility.
+        New code should use CacheManager directly.
     """
     if cache_type:
         deleted = _default_cache_manager.clear(prefix=cache_type)

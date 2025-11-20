@@ -16,20 +16,20 @@ from app.paper_review_workflow.tools.cache_utils import (
 
 from app.paper_review_workflow.tools.cache_manager import CacheManager
 
-# グローバルキャッシュマネージャー
+# Global cache manager
 _cache_manager = CacheManager(cache_dir="storage/cache", ttl_hours=24)
 
 
 def is_accepted(paper: dict[str, Any]) -> bool:
-    """論文が採択されているか判定.
+    """Check if paper is accepted.
     
     Args:
     ----
-        paper: 論文情報の辞書
+        paper: Dictionary of paper information
         
     Returns:
     -------
-        bool: 採択されている場合True、それ以外False
+        bool: True if accepted, False otherwise
     """
     decision = paper.get("decision", "").lower()
     return "accept" in decision
@@ -43,32 +43,32 @@ def search_papers(
     max_results: int = 100,
     accepted_only: bool = True,
 ) -> str:
-    """OpenReview APIを使用して、指定された学会・年の論文を検索します.
+    """Search for papers from specified conference/year using OpenReview API.
 
     Args:
     ----
-        venue (str): 学会名（例: 'NeurIPS', 'ICML', 'ICLR'）
-        year (int): 開催年（例: 2024）
-        keywords (str, optional): 検索キーワード（論文タイトルやアブストラクトで絞り込み）
-        max_results (int): 最大取得件数（デフォルト: 100）
-        accepted_only (bool): 採択論文のみを検索（デフォルト: True）
+        venue (str): Conference name (e.g., 'NeurIPS', 'ICML', 'ICLR')
+        year (int): Conference year (e.g., 2024)
+        keywords (str, optional): Search keywords (filter by paper title or abstract)
+        max_results (int): Maximum number of results (default: 100)
+        accepted_only (bool): Search only accepted papers (default: True)
 
     Returns:
     -------
-        str: 論文情報のJSONリスト。各論文には以下の情報が含まれます：
-            - id: 論文ID
-            - title: 論文タイトル
-            - authors: 著者リスト
-            - abstract: アブストラクト
-            - keywords: キーワードリスト
-            - venue: 学会名
-            - year: 年
+        str: JSON list of paper information. Each paper includes:
+            - id: Paper ID
+            - title: Paper title
+            - authors: Author list
+            - abstract: Abstract
+            - keywords: Keyword list
+            - venue: Conference name
+            - year: Year
             - pdf_url: PDF URL
-            - forum_url: フォーラムURL
+            - forum_url: Forum URL
 
     """
     try:
-        # まず全論文のローカルキャッシュをチェック
+        # First check local cache for all papers
         data_dir = Path(f"storage/papers_data/{venue}_{year}")
         papers_file = data_dir / "all_papers.json"
         
@@ -76,17 +76,17 @@ def search_papers(
             logger.info(f"Loading from local papers data: {papers_file}")
             all_papers = json.loads(papers_file.read_text(encoding="utf-8"))
             
-            # キーワードと採択状況でフィルタリング
+            # Filter by keywords and acceptance status
             filtered_papers: list[dict[str, Any]] = []
             skipped_rejected = 0
             
             for paper in all_papers:
-                # 採択論文のみをフィルタ（accepted_only=True の場合）
+                # Filter only accepted papers (if accepted_only=True)
                 if accepted_only and not is_accepted(paper):
                     skipped_rejected += 1
                     continue
                 
-                # キーワードでフィルタリング
+                # Filter by keywords
                 if keywords:
                     title_match = keywords.lower() in paper["title"].lower()
                     abstract_match = keywords.lower() in paper["abstract"].lower()
@@ -105,7 +105,7 @@ def search_papers(
             
             return json.dumps(filtered_papers, ensure_ascii=False, indent=2)
         
-        # ローカルキャッシュがない場合は従来のキャッシュをチェック
+        # If no local cache, check regular cache
         logger.info("No local papers data found. Checking temporary cache...")
         cache_key_params = {
             "venue": venue,
@@ -119,18 +119,18 @@ def search_papers(
             logger.info(f"Using temporary cached results for {venue} {year} (keywords: {keywords})")
             return cached_result
         
-        # キャッシュがない場合はAPIから取得
+        # If no cache, fetch from API
         logger.warning(f"No cache found. Downloading from OpenReview API...")
         logger.warning(f"TIP: Run 'python fetch_all_papers.py' to download all papers once")
         
-        # OpenReview APIクライアントを初期化（認証なし）
+        # Initialize OpenReview API client (no authentication)
         client = openreview.api.OpenReviewClient(baseurl="https://api2.openreview.net")
 
-        # 学会のinvitation IDを構成
-        # 例: NeurIPS.cc/2024/Conference/-/Submission
+        # Construct conference invitation ID
+        # Example: NeurIPS.cc/2024/Conference/-/Submission
         venue_id = f"{venue}.cc/{year}/Conference"
         
-        # 採択論文を取得
+        # Get accepted papers
         logger.info(f"Searching papers from {venue} {year}...")
         submissions = client.get_all_notes(
             invitation=f"{venue_id}/-/Submission",
@@ -139,7 +139,7 @@ def search_papers(
 
         papers: list[dict[str, Any]] = []
         for submission in submissions:
-            # キーワードフィルタリング
+            # Keyword filtering
             if keywords:
                 title = submission.content.get("title", {})
                 title_value = title.get("value", "") if isinstance(title, dict) else str(title)
@@ -153,7 +153,7 @@ def search_papers(
                 if not (title_match or abstract_match):
                     continue
 
-            # 論文情報を抽出
+            # Extract paper information
             title = submission.content.get("title", {})
             title_value = title.get("value", "") if isinstance(title, dict) else str(title)
             
@@ -179,14 +179,14 @@ def search_papers(
             }
             papers.append(paper_info)
             
-            # max_resultsに達したら終了
+            # Stop when max_results is reached
             if len(papers) >= max_results:
                 break
 
         logger.info(f"Found {len(papers)} papers from {venue} {year}")
         result = json.dumps(papers, ensure_ascii=False, indent=2)
         
-        # キャッシュに保存
+        # Save to cache
         _cache_manager.set(result, prefix="search_papers", **cache_key_params)
         
         return result

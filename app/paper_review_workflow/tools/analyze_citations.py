@@ -15,39 +15,39 @@ def analyze_citations(
     max_citations: int = 20,
     max_references: int = 20,
 ) -> str:
-    """Semantic Scholar APIを使用して、論文の引用情報を分析します.
+    """Analyze paper citation information using Semantic Scholar API.
 
     Args:
     ----
-        paper_title (str): 論文タイトル
-        doi (str, optional): DOI（利用可能な場合）
-        max_citations (int): 取得する引用元論文の最大件数（デフォルト: 20）
-        max_references (int): 取得する参考文献の最大件数（デフォルト: 20）
+        paper_title (str): Paper title
+        doi (str, optional): DOI (if available)
+        max_citations (int): Maximum number of citing papers to retrieve (default: 20)
+        max_references (int): Maximum number of references to retrieve (default: 20)
 
     Returns:
     -------
-        str: 引用分析結果のJSON。以下の情報が含まれます：
-            - paper_id: Semantic Scholar上の論文ID
-            - title: 論文タイトル
-            - citation_count: 被引用数
-            - reference_count: 参考文献数
-            - influential_citation_count: 影響力のある引用数
-            - year: 出版年
-            - citations: 引用元論文のリスト（最大max_citations件）
-            - references: 参考文献のリスト（最大max_references件）
-            - citation_velocity: 年間平均引用数
+        str: JSON of citation analysis results. Includes:
+            - paper_id: Paper ID on Semantic Scholar
+            - title: Paper title
+            - citation_count: Citation count
+            - reference_count: Reference count
+            - influential_citation_count: Influential citation count
+            - year: Publication year
+            - citations: List of citing papers (max max_citations)
+            - references: List of references (max max_references)
+            - citation_velocity: Average citations per year
 
     """
     try:
         base_url = "https://api.semanticscholar.org/graph/v1"
         
-        # 論文を検索
+        # Search for paper
         logger.info(f"Analyzing citations for: {paper_title}")
         if doi:
-            # DOIがある場合は直接取得
+            # Get directly if DOI is available
             search_url = f"{base_url}/paper/DOI:{doi}"
         else:
-            # タイトルで検索
+            # Search by title
             search_url = f"{base_url}/paper/search"
             params = {"query": paper_title, "limit": 1}
             response = requests.get(search_url, params=params, timeout=30)
@@ -63,7 +63,7 @@ def analyze_citations(
             paper_id = search_results["data"][0]["paperId"]
             search_url = f"{base_url}/paper/{paper_id}"
 
-        # 論文詳細を取得（引用情報を含む）
+        # Get paper details (including citation information)
         params = {
             "fields": "paperId,title,year,citationCount,referenceCount,influentialCitationCount,citations,citations.title,citations.year,citations.authors,references,references.title,references.year,references.authors"
         }
@@ -71,7 +71,7 @@ def analyze_citations(
         response.raise_for_status()
         paper_data = response.json()
 
-        # 引用元論文（この論文を引用している論文）
+        # Citing papers (papers that cite this paper)
         citations: list[dict[str, Any]] = []
         for citation in paper_data.get("citations", [])[:max_citations]:
             citations.append({
@@ -79,11 +79,11 @@ def analyze_citations(
                 "year": citation.get("year"),
                 "authors": [
                     author.get("name", "")
-                    for author in citation.get("authors", [])[:3]  # 最初の3人のみ
+                    for author in citation.get("authors", [])[:3]  # First 3 authors only
                 ],
             })
 
-        # 参考文献（この論文が引用している論文）
+        # References (papers that this paper cites)
         references: list[dict[str, Any]] = []
         for reference in paper_data.get("references", [])[:max_references]:
             references.append({
@@ -95,7 +95,7 @@ def analyze_citations(
                 ],
             })
 
-        # 分析結果を構築
+        # Build analysis results
         paper_year = paper_data.get("year", 2025)
         citation_count = paper_data.get("citationCount", 0)
         years_since_publication = max(1, 2025 - paper_year) if paper_year else 1

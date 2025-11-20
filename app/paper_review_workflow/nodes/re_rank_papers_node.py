@@ -13,46 +13,46 @@ from app.paper_review_workflow.constants import DEFAULT_TOP_N_PAPERS
 
 
 class ReRankPapersNode:
-    """LLM評価スコアに基づいて論文を再ランキングするノード."""
+    """Node for re-ranking papers based on LLM evaluation scores."""
     
     def __init__(self, top_n: int = DEFAULT_TOP_N_PAPERS) -> None:
-        """ReRankPapersNodeを初期化.
+        """Initialize ReRankPapersNode.
         
         Args:
         ----
-            top_n: トップN件を選出（デフォルト: 20）
+            top_n: Select top N papers (default: 20)
         """
         self.top_n = top_n
     
     def __call__(self, state: PaperReviewAgentState) -> dict[str, Any]:
-        """LLM評価スコアで論文を再ランキング.
+        """Re-rank papers by LLM evaluation scores.
         
         Args:
         ----
-            state: 現在の状態
+            state: Current state
             
         Returns:
         -------
-            更新された状態の辞書
+            Dictionary of updated state
         """
         logger.info(f"Re-ranking {len(state.llm_evaluated_papers)} papers based on LLM scores...")
         logger.info(f"Top N papers to select: {self.top_n}")
         
-        # overall_scoreでソート（降順） - 統合LLM評価システムではoverall_scoreを使用
+        # Sort by overall_score (descending) - unified LLM evaluation system uses overall_score
         re_ranked_papers = sorted(
             state.llm_evaluated_papers,
             key=lambda p: p.overall_score if p.overall_score is not None else 0.0,
             reverse=True
         )
         
-        # ランク番号を付与して辞書に変換
+        # Assign rank numbers and convert to dict
         top_papers = convert_papers_to_dict_list(
             re_ranked_papers,
             max_count=self.top_n,
             include_llm_scores=True,
         )
         
-        # 統計情報
+        # Statistics
         if re_ranked_papers:
             scores = [p.overall_score for p in re_ranked_papers if p.overall_score is not None]
             if scores:

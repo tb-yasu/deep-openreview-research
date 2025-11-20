@@ -13,35 +13,35 @@ from app.paper_review_workflow.tools import search_papers
 
 
 class SearchPapersNode:
-    """論文を検索するノード.
+    """Node for searching papers.
     
-    OpenReview APIを使用して、指定された学会・年の論文を検索し、
-    状態に保存します。
+    Uses the OpenReview API to search for papers from specified conference/year
+    and saves them to state.
     """
     
     def __init__(self) -> None:
-        """SearchPapersNodeを初期化."""
+        """Initialize SearchPapersNode."""
         self.tool = search_papers
     
     def __call__(self, state: PaperReviewAgentState) -> dict[str, Any]:
-        """論文検索を実行.
+        """Execute paper search.
         
         Args:
         ----
-            state: 現在の状態
+            state: Current state
             
         Returns:
         -------
-            更新された状態の辞書
+            Dictionary of updated state
         """
-        accepted_status = "採択論文のみ" if state.accepted_only else "全論文（採択・不採択含む）"
+        accepted_status = "Accepted only" if state.accepted_only else "All papers (accepted and rejected)"
         logger.info(
             f"Searching papers from {state.venue} {state.year} "
             f"(max: {state.max_papers}, keywords: {state.keywords}, {accepted_status})"
         )
         
         try:
-            # ツールを呼び出して論文を検索
+            # Call tool to search papers
             result = self.tool.invoke({
                 "venue": state.venue,
                 "year": state.year,
@@ -50,10 +50,10 @@ class SearchPapersNode:
                 "accepted_only": state.accepted_only,
             })
             
-            # 結果をパース
+            # Parse result
             papers_data = json.loads(result)
             
-            # エラーチェック
+            # Error check
             if isinstance(papers_data, dict) and "error" in papers_data:
                 error_msg = f"Error searching papers: {papers_data['error']}"
                 logger.error(error_msg)
@@ -62,7 +62,7 @@ class SearchPapersNode:
                     "error_messages": [error_msg],
                 }
             
-            # Paper オブジェクトのリストに変換
+            # Convert to list of Paper objects
             papers: list[Paper] = []
             for paper_data in papers_data:
                 try:

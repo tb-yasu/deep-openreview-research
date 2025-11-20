@@ -17,7 +17,7 @@ from app.paper_review_workflow.models.state import (
 from app.paper_review_workflow.nodes import (
     GatherResearchInterestsNode,
     SearchPapersNode,
-    EvaluatePapersNode,  # 初期フィルタリング用に残す
+    EvaluatePapersNode,  # Keep for initial filtering
     RankPapersNode,
     ReRankPapersNode,
     GeneratePaperReportNode,
@@ -29,10 +29,10 @@ from app.paper_review_workflow.config import LLMConfig, ScoringWeights, DEFAULT_
 
 
 class PaperReviewAgent(LangGraphAgent):
-    """論文レビューエージェント.
+    """Paper Review Agent.
     
-    OpenReview APIを使用して学会の採択論文を検索・分析し、
-    ユーザーの研究興味に基づいて有益な論文を抽出します。
+    Uses the OpenReview API to search and analyze accepted papers from conferences,
+    extracting valuable papers based on user's research interests.
     """
     
     def __init__(
@@ -44,29 +44,29 @@ class PaperReviewAgent(LangGraphAgent):
         scoring_weights: ScoringWeights | None = None,
         top_n: int | None = None,
     ) -> None:
-        """PaperReviewAgentを初期化.
+        """Initialize PaperReviewAgent.
         
         Args:
         ----
-            checkpointer: チェックポインタ（状態の永続化用）
-            log_level: ログレベル
-            recursion_limit: 再帰の最大回数
-            llm_config: LLM評価の設定（省略時はデフォルト）
-            scoring_weights: スコアリング重み設定（省略時はデフォルト）
-            top_n: 最終レポートに含める論文数（省略時はtop_kと同じ）
+            checkpointer: Checkpointer for state persistence
+            log_level: Logging level
+            recursion_limit: Maximum recursion limit
+            llm_config: LLM evaluation configuration (uses default if omitted)
+            scoring_weights: Scoring weight configuration (uses default if omitted)
+            top_n: Number of papers to include in final report (same as top_k if omitted)
         """
         weights = scoring_weights or DEFAULT_SCORING_WEIGHTS
         
         self.gather_interests_node = GatherResearchInterestsNode()
         self.search_papers_node = SearchPapersNode()
-        self.evaluate_papers_node = EvaluatePapersNode(scoring_weights=weights)  # 初期フィルタリング
+        self.evaluate_papers_node = EvaluatePapersNode(scoring_weights=weights)  # Initial filtering
         self.rank_papers_node = RankPapersNode(llm_config=llm_config)
-        # 統合LLM評価（1回の呼び出しで全スコア計算）
+        # Unified LLM evaluation (calculates all scores in one call)
         self.unified_llm_evaluate_node = UnifiedLLMEvaluatePapersNode(
             llm_config=llm_config,
             scoring_weights=weights,
         )
-        # top_nを常に渡す（Noneの場合はデフォルト値が使われる）
+        # Always pass top_n (default value is used if None)
         self.re_rank_papers_node = ReRankPapersNode(top_n=top_n if top_n is not None else 9999)
         self.generate_report_node = GeneratePaperReportNode()
         
@@ -77,37 +77,37 @@ class PaperReviewAgent(LangGraphAgent):
         )
     
     def _create_graph(self) -> CompiledStateGraph:
-        """ワークフローグラフを作成.
+        """Create workflow graph.
         
         Returns:
         -------
-            コンパイル済みのStateGraph
+            Compiled StateGraph
         """
         workflow = StateGraph(
             state_schema=PaperReviewAgentState,
             input_schema=PaperReviewAgentInputState,
-            # output_schemaを削除して完全な状態を返す（将来的にはここで出力を整形）
+            # Remove output_schema to return full state (format output here in the future)
         )
         
-        # ノードを追加
+        # Add nodes
         workflow.add_node("gather_interests", self.gather_interests_node)
         workflow.add_node("search_papers", self.search_papers_node)
-        workflow.add_node("evaluate_papers", self.evaluate_papers_node)  # 初期フィルタリング
+        workflow.add_node("evaluate_papers", self.evaluate_papers_node)  # Initial filtering
         workflow.add_node("rank_papers", self.rank_papers_node)
-        # 統合LLM評価（1回で全スコア計算）
+        # Unified LLM evaluation (calculates all scores in one call)
         workflow.add_node("unified_llm_evaluate", self.unified_llm_evaluate_node)
         workflow.add_node("re_rank_papers", self.re_rank_papers_node)
         workflow.add_node("generate_report", self.generate_report_node)
         
-        # ワークフローのエッジを定義
+        # Define workflow edges
         workflow.add_edge("gather_interests", "search_papers")
         workflow.add_edge("search_papers", "evaluate_papers")
         workflow.add_edge("evaluate_papers", "rank_papers")
-        workflow.add_edge("rank_papers", "unified_llm_evaluate")  # 統合LLM評価
+        workflow.add_edge("rank_papers", "unified_llm_evaluate")  # Unified LLM evaluation
         workflow.add_edge("unified_llm_evaluate", "re_rank_papers")
         workflow.add_edge("re_rank_papers", "generate_report")
         
-        # エントリーポイントと終了ポイントを設定
+        # Set entry and finish points
         workflow.set_entry_point("gather_interests")
         workflow.set_finish_point("generate_report")
         
@@ -119,17 +119,17 @@ def create_graph(
     scoring_weights: ScoringWeights | None = None,
     top_n: int | None = None,
 ) -> CompiledStateGraph:
-    """PaperReviewAgentのグラフを作成.
+    """Create PaperReviewAgent graph.
     
     Args:
     ----
-        llm_config: LLM評価の設定（省略時はデフォルト）
-        scoring_weights: スコアリング重み設定（省略時はデフォルト）
-        top_n: 最終レポートに含める論文数（省略時はtop_kと同じ）
+        llm_config: LLM evaluation configuration (uses default if omitted)
+        scoring_weights: Scoring weight configuration (uses default if omitted)
+        top_n: Number of papers to include in final report (same as top_k if omitted)
     
     Returns:
     -------
-        コンパイル済みのグラフ
+        Compiled graph
     """
     checkpointer = InMemorySaver()
     agent = PaperReviewAgent(
@@ -148,17 +148,17 @@ def invoke_graph(
     input_data: dict[str, Any],
     config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """グラフを実行.
+    """Execute graph.
     
     Args:
     ----
-        graph: 実行するグラフ
-        input_data: 入力データ
-        config: 実行設定
+        graph: Graph to execute
+        input_data: Input data
+        config: Execution configuration
         
     Returns:
     -------
-        実行結果
+        Execution result
     """
     if config is None:
         config = {"recursion_limit": 100, "thread_id": "default"}

@@ -6,11 +6,11 @@ from app.core.utils.nano_id import NanoID, generate_id
 
 
 class Document(BaseModel):
-    id: NanoID = Field(title="文書ID", default_factory=generate_id)
-    title: str = Field(title="タイトル")
+    id: NanoID = Field(title="Document ID", default_factory=generate_id)
+    title: str = Field(title="Title")
     url: str = Field(title="URL")
-    abstract: str = Field(title="アブストラクト", default="")
-    authors: list[str] = Field(title="著者", default_factory=list)
+    abstract: str = Field(title="Abstract", default="")
+    authors: list[str] = Field(title="Authors", default_factory=list)
 
     def to_string(self) -> str:
         return f"""\
@@ -24,18 +24,18 @@ class Document(BaseModel):
 
 
 class ManagedDocument(Document):
-    task_id: NanoID = Field(title="タスクID")
+    task_id: NanoID = Field(title="Task ID")
     status: ManagedTaskStatus = Field(
-        title="文書状況", default=ManagedTaskStatus.NOT_STARTED
+        title="Document Status", default=ManagedTaskStatus.NOT_STARTED
     )
     summary: str | None = Field(
-        title="タスク解決のための詳細要約",
+        title="Detailed Summary for Task Resolution",
         description=(
-            "この文書が担当するタスクに関連する重要な知見、洞察、または解決策を、"
-            "具体的かつ詳細に記述してください。"
-            "要約には、文書の主な主張、根拠となるデータや理論、"
-            "タスク達成に直接寄与するポイントを明確に含めてください。"
-            "また、他の文書との差別化や、タスクに対する独自の貢献があれば明記してください。"
+            "Describe in specific and detailed terms the important knowledge, insights, or solutions "
+            "related to the task this document is responsible for. "
+            "The summary should clearly include the document's main claims, supporting data or theories, "
+            "and points that directly contribute to task completion. "
+            "Also specify any differentiation from other documents or unique contributions to the task."
         ),
         default=None,
     )
