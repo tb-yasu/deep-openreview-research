@@ -367,13 +367,17 @@ Please output ONLY the following JSON format (no explanation needed):
     def _parse_llm_response(self, response: str) -> dict:
         """Parse LLM response and extract evaluation results."""
         try:
-            # Extract JSON block
-            json_match = re.search(r'```json\s*(\{.*?\})\s*```', response, re.DOTALL)
+            # Extract JSON block - use greedy match for nested JSON
+            json_match = re.search(r'```json\s*(\{.*\})\s*```', response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1)
             else:
-                # If no JSON block, find {} from entire text
-                json_match = re.search(r'\{.*?\}', response, re.DOTALL)
+                # If no JSON block, find the largest {} block from entire text
+                # Use greedy match to capture nested braces
+                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response, re.DOTALL)
+                if not json_match:
+                    # Fallback: try simple greedy match
+                    json_match = re.search(r'\{.*\}', response, re.DOTALL)
                 if json_match:
                     json_str = json_match.group(0)
                 else:

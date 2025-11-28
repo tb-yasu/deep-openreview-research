@@ -61,6 +61,15 @@ class GeneratePaperReportNode:
         lines.append(f"- **Conference**: {state.venue} {state.year}")
         lines.append(f"- **Keywords**: {state.keywords or 'Not specified'}")
         
+        # Add search method
+        if state.use_hybrid_search:
+            search_method = "Hybrid Search (Vector + Keyword)"
+            search_detail = f"RRF Weights: Vector={state.hybrid_vector_weight:.1f}, Keyword={state.hybrid_keyword_weight:.1f}"
+            lines.append(f"- **Search Method**: {search_method}")
+            lines.append(f"- **{search_detail}**")
+        else:
+            lines.append("- **Search Method**: Keyword Search (Standard)")
+        
         # Add research description
         criteria = state.evaluation_criteria
         if criteria.research_description:

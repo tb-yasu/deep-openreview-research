@@ -14,6 +14,7 @@ AI-Powered Deep Paper Review and Analysis Agent
 ## ✨ Key Features
 
 - 🔍 **Automatic Paper Search**: Automatically search papers from specified conferences and years
+- 🔎 **Hybrid Search (Vector + Keyword)**: Combine semantic similarity and keyword matching for better recall
 - 🤖 **Unified LLM Evaluation**: Comprehensive evaluation of relevance, novelty, impact, and practicality in a single call
 - ⚡ **Parallel Processing**: Execute up to 10 concurrent LLM evaluations for ~10x faster processing
 - 📊 **Scoring System**: Combined scoring using OpenReview evaluations and AI assessments
@@ -48,6 +49,17 @@ python run_deep_research.py \
   --venue NeurIPS \
   --year 2025 \
   --research-description "I am interested in graph generation and its applications to drug discovery"
+
+# 6. (Optional) Enable Hybrid Search for better recall
+# First, build the vector index (one-time setup, ~$0.03 for 5,000 papers)
+python indexer.py --venue NeurIPS --year 2025
+
+# Then run with hybrid search enabled
+python run_deep_research.py \
+  --venue NeurIPS \
+  --year 2025 \
+  --research-description "I am interested in graph generation and its applications to drug discovery" \
+  --hybrid-search
 ```
 
 ## 📦 Installation
@@ -88,6 +100,7 @@ pip install -r requirements.txt
 Main dependencies:
 - `langchain` / `langgraph` - LLM application framework
 - `langchain-openai` - OpenAI integration
+- `langchain-chroma` - Vector database integration (for hybrid search)
 - `openreview-py` - OpenReview API client
 - `pydantic` - Data validation
 - `loguru` - Logging
@@ -172,7 +185,7 @@ python run_deep_research.py \
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--min-relevance-score` | 0.2 | Minimum relevance score (0.0-1.0) |
+| `--min-relevance-score` | 0.1 | Minimum relevance score (0.0-1.0) |
 | `--top-k` | 100 | Number of top papers for LLM evaluation (this number will be included in the final report) |
 | `--max-papers` | 15000 | Maximum number of papers to search |
 | `--focus-on-novelty` | True | Prioritize novelty |
@@ -193,6 +206,14 @@ python run_deep_research.py \
 | `--output-dir` | storage/outputs | Output directory |
 | `--output-file` | Auto-generated | Output filename |
 | `--top-n-display` | 10 | Number of papers to display in console |
+
+### Hybrid Search Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--hybrid-search` | False | Enable hybrid search (vector + keyword) |
+| `--vector-weight` | 1.0 | Weight for vector search in RRF |
+| `--keyword-weight` | 1.0 | Weight for keyword search in RRF |
 
 ### Other Options
 
@@ -257,12 +278,39 @@ python run_deep_research.py \
   --output-file transformers_review.md
 ```
 
+### Example 6: Hybrid Search (Better Recall)
+
+Hybrid search combines vector (semantic) search with keyword search using Reciprocal Rank Fusion (RRF).
+
+```bash
+# First, build the vector index (one-time setup)
+python indexer.py --venue NeurIPS --year 2025
+
+# Then run with hybrid search
+python run_deep_research.py \
+  --venue NeurIPS \
+  --year 2025 \
+  --research-description "I'm interested in LLM applications for graphs" \
+  --hybrid-search
+
+# Customize RRF weights (prioritize vector search)
+python run_deep_research.py \
+  --venue NeurIPS \
+  --year 2025 \
+  --research-description "neural network optimization" \
+  --hybrid-search \
+  --vector-weight 1.5 \
+  --keyword-weight 1.0
+```
+
 ## 🏗️ Architecture
 
 ```
 deep-openreview-research/
 ├── fetch_all_papers.py      # Paper data fetching script
 ├── run_deep_research.py     # Main execution script
+├── indexer.py               # Vector index builder (for hybrid search)
+├── search_engine.py         # Hybrid search engine (RRF)
 ├── quickstart.sh            # Quick start script
 ├── app/
 │   ├── paper_review_workflow/  # Paper review workflow
@@ -282,7 +330,8 @@ deep-openreview-research/
 └── storage/
     ├── cache/                  # Cache data
     ├── outputs/                # Output reports
-    └── papers_data/            # Paper data
+    ├── papers_data/            # Paper data
+    └── vector_db/              # Vector index (for hybrid search)
 ```
 
 ## 🔄 Workflow
@@ -290,6 +339,24 @@ deep-openreview-research/
 1. **Keyword Collection**: Extract research keywords from natural language (or specify directly)
 2. **Synonym Generation**: Generate synonyms for each keyword using LLM
 3. **Paper Search**: Search papers from specified conference and year
+   - **Standard Search**: Keyword-based matching on title/abstract
+   - **Hybrid Search** (optional): Combines vector (semantic) and keyword search using RRF
+   
+   ```
+   [Research Query]
+           │
+     ┌─────┴─────┐
+     ▼           ▼
+   Vector     Keyword
+   Search     Search
+     │           │
+     └─────┬─────┘
+           ▼
+    RRF Fusion
+           │
+           ▼
+   [Ranked Results]
+   ```
 4. **Initial Evaluation**: Calculate relevance scores with keyword matching
 5. **Ranking**: Select top k papers based on scores
 6. **Unified LLM Evaluation** (⚡Parallel Processing): Execute up to 10 concurrent evaluations, comprehensively evaluating in a single call:
@@ -403,6 +470,26 @@ python run_deep_research.py ... --top-k 50
 python run_deep_research.py ... --model gpt-4o-mini
 ```
 
+### Vector index not found (Hybrid Search)
+
+If you get a "Vector index not found" error when using `--hybrid-search`:
+
+```bash
+# Build the vector index first
+python indexer.py --venue NeurIPS --year 2025
+
+# Then run with hybrid search
+python run_deep_research.py ... --hybrid-search
+```
+
+### Vector index outdated
+
+If you've re-fetched paper data, rebuild the vector index:
+
+```bash
+python indexer.py --venue NeurIPS --year 2025 --rebuild
+```
+
 ## ⚡ Performance and Optimization
 
 ### Speed Improvement with Parallel Processing
@@ -430,11 +517,24 @@ Parallel execution of LLM evaluations achieves significant processing time reduc
 2. **Limit top-k**: Appropriately restrict the number of papers to evaluate (default: 30)
 3. **Leverage cache**: Re-runs with same conference/year/keywords use cached results
 
+### Hybrid Search Cost
+
+Vector index building uses OpenAI's `text-embedding-3-small` model:
+
+| Papers | Embedding Cost | Time |
+|--------|---------------|------|
+| 1,000 papers | ~$0.006 | ~30s |
+| 5,000 papers | ~$0.03 | ~2-3 min |
+| 10,000 papers | ~$0.06 | ~5-6 min |
+
+*Note: Index building is a one-time cost per conference/year.*
+
 ## 🛠️ Tech Stack
 
 - **Python**: 3.12+
 - **Framework**: LangGraph, LangChain
 - **LLM Provider**: OpenAI
+- **Vector Database**: ChromaDB (for hybrid search)
 - **API**: OpenReview API
 - **Data Validation**: Pydantic
 - **Code Quality**: Ruff, MyPy

@@ -92,8 +92,8 @@ Usage Examples:
     parser.add_argument(
         "--min-relevance-score",
         type=float,
-        default=0.2,
-        help="Minimum relevance score (0.0-1.0, default: 0.2)",
+        default=0.1,
+        help="Minimum relevance score (0.0-1.0, default: 0.1)",
     )
     parser.add_argument(
         "--top-k",
@@ -173,6 +173,25 @@ Usage Examples:
         help="Number of papers to display in console (default: 10)",
     )
     
+    # Hybrid search options
+    parser.add_argument(
+        "--hybrid-search",
+        action="store_true",
+        help="Enable hybrid search (vector + keyword). Requires running indexer.py first.",
+    )
+    parser.add_argument(
+        "--vector-weight",
+        type=float,
+        default=1.0,
+        help="Weight for vector search in hybrid search (default: 1.0)",
+    )
+    parser.add_argument(
+        "--keyword-weight",
+        type=float,
+        default=1.0,
+        help="Weight for keyword search in hybrid search (default: 1.0)",
+    )
+    
     # Other options
     parser.add_argument(
         "--verbose",
@@ -246,6 +265,10 @@ def run_paper_review(args: argparse.Namespace) -> None:
                 focus_on_novelty=args.focus_on_novelty,
                 focus_on_impact=args.focus_on_impact,
             ),
+            # Hybrid search options
+            use_hybrid_search=args.hybrid_search,
+            hybrid_vector_weight=args.vector_weight,
+            hybrid_keyword_weight=args.keyword_weight,
         )
         
         # Display execution conditions
@@ -259,6 +282,11 @@ def run_paper_review(args: argparse.Namespace) -> None:
         logger.info(f"   Min Relevance Score: {args.min_relevance_score}")
         logger.info(f"   Max Papers: {args.max_papers}")
         logger.info(f"   Search Scope: {'All papers (accepted & rejected)' if args.include_rejected else 'Accepted papers only'}")
+        if args.hybrid_search:
+            logger.info(f"   Search Method: Hybrid Search (Vector + Keyword)")
+            logger.info(f"   RRF Weights: Vector={args.vector_weight}, Keyword={args.keyword_weight}")
+        else:
+            logger.info(f"   Search Method: Keyword Search (Standard)")
         if not args.no_llm_eval:
             logger.info(f"   LLM Evaluation Target: Top {args.top_k} papers")
         else:

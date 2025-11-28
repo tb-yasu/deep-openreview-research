@@ -209,6 +209,23 @@ class PaperReviewAgentInputState(BaseModel):
         title="Evaluation Criteria",
         description="Criteria for evaluating papers",
     )
+    
+    # Hybrid search options
+    use_hybrid_search: bool = Field(
+        default=False,
+        title="Use Hybrid Search",
+        description="Use hybrid search combining vector search and keyword search",
+    )
+    hybrid_vector_weight: float = Field(
+        default=1.0,
+        title="Vector Search Weight",
+        description="Weight for vector search in RRF (1.0-2.0 recommended)",
+    )
+    hybrid_keyword_weight: float = Field(
+        default=1.0,
+        title="Keyword Search Weight",
+        description="Weight for keyword search in RRF (1.0-2.0 recommended)",
+    )
 
 
 class PaperReviewAgentPrivateState(BaseModel):
