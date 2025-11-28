@@ -482,7 +482,3 @@ This project uses the following excellent tools and services:
 ## 📞 Support
 
 If you encounter issues or have questions, please contact us via [GitHub Issues](https://github.com/tb-yasu/deep-openreview-research/issues).
-
----
-
-**Happy Paper Reviewing! 📚✨**
