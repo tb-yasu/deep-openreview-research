@@ -1,26 +1,25 @@
-"""Fetch all papers from OpenReview with review data.
+"""Fetch all papers from OpenReview.
 
-This script downloads all papers from a specified conference (e.g., NeurIPS 2025)
-including their review data, ratings, and decisions. The data is cached locally
-to avoid repeated API calls.
+This script downloads all papers from a specified conference (e.g., NeurIPS 2025).
+By default, it fetches only basic paper information (title, abstract, authors) for
+fast initial setup. Review data can be fetched on-demand later or with --with-reviews.
 
 Features:
-- Fetches complete paper metadata (title, authors, abstract, keywords)
-- Retrieves review data (ratings, confidence scores, review text)
-- Handles API rate limits automatically (60 requests/min)
+- Fast mode (default): Fetches basic paper info only (5-10 minutes)
+- Full mode (--with-reviews): Fetches review data too (60-90 minutes)
+- Handles API rate limits automatically
 - Supports resume from interruption
-- Saves progress checkpoints every 100 papers
-- Provides detailed progress tracking and ETA
+- Saves progress checkpoints
 
 Usage:
-    # Fetch NeurIPS 2025 papers
+    # Fast mode: Basic info only (recommended for first run)
     python fetch_all_papers.py --venue NeurIPS --year 2025
     
-    # Force re-download even if cache exists
-    python fetch_all_papers.py --venue NeurIPS --year 2025 --force
+    # Full mode: Include all review data
+    python fetch_all_papers.py --venue NeurIPS --year 2025 --with-reviews
     
-    # Fetch from a different conference
-    python fetch_all_papers.py --venue ICML --year 2024
+    # Force re-download
+    python fetch_all_papers.py --venue NeurIPS --year 2025 --force
 
 Author: Paper Review Agent Team
 License: MIT
@@ -326,20 +325,22 @@ def fetch_paper_reviews_dynamic(
         }
 
 
-def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
-    """Fetch all papers from a conference with review data and save to disk.
+def fetch_all_papers(venue: str, year: int, force: bool = False, with_reviews: bool = False) -> None:
+    """Fetch all papers from a conference and save to disk.
     
     Args:
     ----
         venue: Conference name (e.g., "NeurIPS", "ICML", "ICLR")
         year: Conference year (e.g., 2025)
         force: If True, re-download even if cache exists
+        with_reviews: If True, fetch full review data (slower, 60-90 min)
+                      If False (default), fetch basic info only (fast, 5-10 min)
         
     Note:
     ----
-        This function takes 60-90 minutes to complete due to API rate limits.
-        However, it only needs to be run once. Progress is saved every 100 papers,
-        so it can be safely interrupted and resumed.
+        Fast mode (default): Takes 5-10 minutes, fetches basic paper info only.
+        Full mode (--with-reviews): Takes 60-90 minutes, includes all review data.
+        Progress is saved every 100 papers, so it can be safely interrupted.
     """
     # Setup output directory
     data_dir = Path(f"storage/papers_data/{venue}_{year}")
@@ -356,39 +357,51 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
             logger.info(f"Cached: {metadata['total_papers']} papers from {metadata['fetch_date']}")
             logger.info(f"File size: {metadata['file_size_mb']:.2f} MB")
             
-            # Show detected fields if available
-            if "detected_review_fields" in metadata:
-                num_fields = len(metadata["detected_review_fields"])
-                logger.info(f"Review fields: {num_fields} fields detected")
-                logger.debug(f"Fields: {', '.join(metadata['detected_review_fields'][:10])}...")
+            # Show what data is included
+            includes_reviews = metadata.get("includes_review_data", False)
+            if includes_reviews:
+                logger.info("Data includes: Basic info + Reviews")
+                if "detected_review_fields" in metadata:
+                    num_fields = len(metadata["detected_review_fields"])
+                    logger.info(f"Review fields: {num_fields} fields detected")
+            else:
+                logger.info("Data includes: Basic info only (no reviews)")
+                logger.info("💡 To fetch reviews, use: python fetch_all_papers.py --with-reviews --force")
         
         logger.info("")
-        logger.info("✓ Use this cache by running the agent with any keywords")
+        logger.info("✓ Use this cache by running the agent")
         logger.info("✓ To re-download, use --force flag")
         return
     
-    # Display header
+    # Display header based on mode
     logger.info("=" * 80)
-    logger.info(f"Fetching all papers with review data from {venue} {year}")
-    logger.info("This will take 60-90 minutes due to API rate limits (60 requests/min)")
-    logger.info("But you only need to do this ONCE!")
+    if with_reviews:
+        logger.info(f"Fetching all papers WITH review data from {venue} {year}")
+        logger.info("This will take 60-90 minutes due to API rate limits (60 requests/min)")
+    else:
+        logger.info(f"Fetching all papers (basic info) from {venue} {year}")
+        logger.info("⚡ Fast mode: This will take only 5-10 minutes!")
+        logger.info("💡 Reviews will be fetched on-demand when you run the agent")
     logger.info("=" * 80)
     
     # Initialize OpenReview client
     client = openreview.api.OpenReviewClient(baseurl="https://api2.openreview.net")
     venue_id = f"{venue}.cc/{year}/Conference"
     
-    # Step 1: Detect all available review fields
-    logger.info("")
-    logger.info("=" * 80)
-    logger.info("STEP 1: Detecting Review Fields")
-    logger.info("=" * 80)
-    detected_fields = detect_all_review_fields(client, venue_id, num_samples=3)
-    logger.info("")
+    # Step 1: Detect review fields (only if with_reviews)
+    detected_fields = set()
+    if with_reviews:
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("STEP 1: Detecting Review Fields")
+        logger.info("=" * 80)
+        detected_fields = detect_all_review_fields(client, venue_id, num_samples=3)
+        logger.info("")
     
     # Fetch all submissions with retry logic
     logger.info("=" * 80)
-    logger.info("STEP 2: Fetching Paper Submissions")
+    step_num = "STEP 2" if with_reviews else "STEP 1"
+    logger.info(f"{step_num}: Fetching Paper Submissions")
     logger.info("=" * 80)
     logger.info("Connecting to OpenReview API...")
     max_retries = 5
@@ -428,42 +441,47 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
     processed_ids: set[str] = set()
     resume_from = 0
     
-    # Check for checkpoint files (resume feature)
-    # Sort by paper count (extracted from filename) to get the latest checkpoint
-    temp_files = sorted(
-        data_dir.glob("all_papers_temp_*.json"),
-        key=lambda f: int(f.stem.split('_')[-1])
-    )
-    if temp_files and not force:
-        latest_temp_file = temp_files[-1]
-        logger.info(f"Resume: Found checkpoint {latest_temp_file.name}")
-        
-        try:
-            temp_data = json.loads(latest_temp_file.read_text(encoding="utf-8"))
-            papers = temp_data
-            processed_ids = {p["id"] for p in papers}
-            resume_from = len(papers)
+    # Check for checkpoint files (resume feature) - only for with_reviews mode
+    if with_reviews:
+        temp_files = sorted(
+            data_dir.glob("all_papers_temp_*.json"),
+            key=lambda f: int(f.stem.split('_')[-1])
+        )
+        if temp_files and not force:
+            latest_temp_file = temp_files[-1]
+            logger.info(f"Resume: Found checkpoint {latest_temp_file.name}")
             
-            logger.success(f"Resume: Loaded {resume_from} papers from checkpoint")
-            logger.info(f"Resume: Starting from paper #{resume_from + 1}")
-        except Exception as e:
-            logger.warning(f"Resume: Failed to load checkpoint: {e}")
-            logger.info("Resume: Starting from scratch")
-            papers = []
-            processed_ids = set()
-            resume_from = 0
-    elif force and temp_files:
-        # Clean up temp files in force mode
-        logger.info("Force mode: Cleaning up checkpoint files...")
-        for temp_file in temp_files:
-            temp_file.unlink()
-            logger.debug(f"Cleaned up: {temp_file.name}")
+            try:
+                temp_data = json.loads(latest_temp_file.read_text(encoding="utf-8"))
+                papers = temp_data
+                processed_ids = {p["id"] for p in papers}
+                resume_from = len(papers)
+                
+                logger.success(f"Resume: Loaded {resume_from} papers from checkpoint")
+                logger.info(f"Resume: Starting from paper #{resume_from + 1}")
+            except Exception as e:
+                logger.warning(f"Resume: Failed to load checkpoint: {e}")
+                logger.info("Resume: Starting from scratch")
+                papers = []
+                processed_ids = set()
+                resume_from = 0
+        elif force and temp_files:
+            # Clean up temp files in force mode
+            logger.info("Force mode: Cleaning up checkpoint files...")
+            for temp_file in temp_files:
+                temp_file.unlink()
+                logger.debug(f"Cleaned up: {temp_file.name}")
     
     logger.info("")
     logger.info("=" * 80)
-    logger.info("STEP 3: Processing Papers with Review Data")
+    step_num = "STEP 3" if with_reviews else "STEP 2"
+    if with_reviews:
+        logger.info(f"{step_num}: Processing Papers with Review Data")
+        logger.info("Progress will be saved every 100 papers to handle interruptions")
+    else:
+        logger.info(f"{step_num}: Processing Paper Basic Information")
     logger.info("=" * 80)
-    logger.info("Progress will be saved every 100 papers to handle interruptions")
+    
     if resume_from > 0:
         logger.info(f"Resuming from paper #{resume_from + 1}")
     
@@ -471,14 +489,14 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
     request_count = 0
     
     for i, submission in enumerate(submissions, 1):
-        # Skip already processed papers
+        # Skip already processed papers (for resume)
         if submission.id in processed_ids:
             if i % 100 == 0:
                 logger.debug(f"Skipping already processed papers up to #{i}")
             continue
         
-        # Log progress with ETA
-        if len(papers) % 100 == 0 and len(papers) > resume_from:
+        # Log progress
+        if len(papers) % 500 == 0 and len(papers) > 0:
             elapsed = time.time() - start_time
             actual_processed = len(papers) - resume_from
             if actual_processed > 0:
@@ -490,7 +508,7 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
                     f"Rate: {rate:.1f}/min | ETA: {eta_minutes:.0f} min"
                 )
         
-        # Extract basic paper information
+        # Extract basic paper information (always)
         title = submission.content.get("title", {})
         title_value = title.get("value", "") if isinstance(title, dict) else str(title)
         
@@ -503,15 +521,16 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
         keywords_field = submission.content.get("keywords", {})
         keywords_value = keywords_field.get("value", []) if isinstance(keywords_field, dict) else []
         
-        # Rate limiting: 60 requests/min = 1.2 sec/request
-        # This ensures we stay under the API rate limit
-        time.sleep(1.2)
+        # Try to get decision from submission content (some conferences include it)
+        decision_field = submission.content.get("venue", {})
+        decision_from_venue = ""
+        if isinstance(decision_field, dict):
+            venue_value = decision_field.get("value", "")
+            if venue_value:
+                # Parse decision from venue field (e.g., "NeurIPS 2025 Accept (poster)")
+                decision_from_venue = venue_value
         
-        # Fetch review data with dynamic field extraction
-        review_data = fetch_paper_reviews_dynamic(client, submission.id, detected_fields)
-        request_count += 1
-        
-        # Build complete paper info
+        # Build paper info
         paper_info = {
             "id": submission.id,
             "title": title_value,
@@ -522,20 +541,43 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
             "year": year,
             "pdf_url": f"https://openreview.net/pdf?id={submission.id}",
             "forum_url": f"https://openreview.net/forum?id={submission.id}",
-            # Review data
-            "reviews": review_data["reviews"],
-            "rating_avg": review_data["rating_avg"],
-            "confidence_avg": review_data["confidence_avg"],
-            "decision": review_data["decision"],
-            # Additional OpenReview information
-            "meta_review": review_data["meta_review"],
-            "author_remarks": review_data["author_remarks"],
-            "decision_comment": review_data["decision_comment"],
         }
+        
+        if with_reviews:
+            # Full mode: Fetch review data for each paper
+            # Rate limiting: 60 requests/min = 1.2 sec/request
+            time.sleep(1.2)
+            
+            # Fetch review data with dynamic field extraction
+            review_data = fetch_paper_reviews_dynamic(client, submission.id, detected_fields)
+            request_count += 1
+            
+            # Add review data
+            paper_info.update({
+                "reviews": review_data["reviews"],
+                "rating_avg": review_data["rating_avg"],
+                "confidence_avg": review_data["confidence_avg"],
+                "decision": review_data["decision"],
+                "meta_review": review_data["meta_review"],
+                "author_remarks": review_data["author_remarks"],
+                "decision_comment": review_data["decision_comment"],
+            })
+        else:
+            # Fast mode: Basic info only, use venue field for decision hint
+            paper_info.update({
+                "reviews": [],
+                "rating_avg": None,
+                "confidence_avg": None,
+                "decision": decision_from_venue if decision_from_venue else "N/A",
+                "meta_review": "",
+                "author_remarks": "",
+                "decision_comment": "",
+            })
+        
         papers.append(paper_info)
         
-        # Save checkpoint every 100 papers (interruption recovery)
-        if len(papers) % 100 == 0:
+        # Save checkpoint every 100 papers (only in with_reviews mode)
+        if with_reviews and len(papers) % 100 == 0:
             temp_file = data_dir / f"all_papers_temp_{len(papers)}.json"
             temp_file.write_text(
                 json.dumps(papers, ensure_ascii=False, indent=2),
@@ -554,18 +596,18 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
     papers_with_reviews = sum(1 for p in papers if p.get("rating_avg") is not None)
     avg_rating = sum(p["rating_avg"] for p in papers if p.get("rating_avg") is not None) / papers_with_reviews if papers_with_reviews > 0 else 0
     
-    # Save metadata with detected fields
+    # Save metadata
     metadata = {
         "venue": venue,
         "year": year,
         "total_papers": len(papers),
         "papers_with_reviews": papers_with_reviews,
-        "average_rating": round(avg_rating, 2),
+        "average_rating": round(avg_rating, 2) if avg_rating else None,
         "fetch_date": datetime.now().isoformat(),
         "file_size_mb": papers_file.stat().st_size / 1024 / 1024,
-        "includes_review_data": True,
-        # Dynamic field detection results
-        "detected_review_fields": sorted(detected_fields),
+        "includes_review_data": with_reviews,
+        # Dynamic field detection results (only if with_reviews)
+        "detected_review_fields": sorted(detected_fields) if detected_fields else [],
         "num_detected_fields": len(detected_fields),
     }
     metadata_file.write_text(
@@ -579,46 +621,57 @@ def fetch_all_papers(venue: str, year: int, force: bool = False) -> None:
         logger.debug(f"Cleaned up: {temp_file.name}")
     
     # Display completion summary
+    elapsed_total = time.time() - start_time
     logger.success("")
     logger.success("=" * 80)
     logger.success("✓ DATA FETCH COMPLETE!")
     logger.success("=" * 80)
     logger.success(f"✓ Saved {len(papers)} papers to {papers_file}")
-    logger.success(f"✓ Papers with reviews: {papers_with_reviews} ({papers_with_reviews/len(papers)*100:.1f}%)")
-    logger.success(f"✓ Average rating: {avg_rating:.2f}/10")
     logger.success(f"✓ File size: {metadata['file_size_mb']:.2f} MB")
-    logger.success(f"✓ Detected {len(detected_fields)} review fields")
-    logger.success(f"✓ Metadata: {metadata_file}")
-    logger.success("=" * 80)
+    logger.success(f"✓ Time elapsed: {elapsed_total/60:.1f} minutes")
+    
+    if with_reviews:
+        logger.success(f"✓ Papers with reviews: {papers_with_reviews} ({papers_with_reviews/len(papers)*100:.1f}%)")
+        logger.success(f"✓ Average rating: {avg_rating:.2f}/10")
+        logger.success(f"✓ Detected {len(detected_fields)} review fields")
+        logger.success("=" * 80)
+        logger.info("")
+        logger.info("📊 Detected Review Fields:")
+        for i in range(0, len(sorted(detected_fields)), 4):
+            fields_row = sorted(detected_fields)[i:i+4]
+            logger.info(f"  • {' | '.join(f'{f:25s}' for f in fields_row)}")
+    else:
+        logger.success("✓ Mode: Fast (basic info only)")
+        logger.success("=" * 80)
+        logger.info("")
+        logger.info("💡 Reviews will be fetched on-demand when you run the agent")
+        logger.info("💡 To pre-fetch all reviews, run:")
+        logger.info(f"   python fetch_all_papers.py --venue {venue} --year {year} --with-reviews --force")
+    
     logger.info("")
-    logger.info("📊 Detected Review Fields:")
-    for i in range(0, len(sorted(detected_fields)), 4):
-        fields_row = sorted(detected_fields)[i:i+4]
-        logger.info(f"  • {' | '.join(f'{f:25s}' for f in fields_row)}")
-    logger.info("")
-    logger.success("🎉 You can now run the agent with any keywords for instant filtering!")
-    logger.success("🎉 All review data is cached locally - no more API rate limits!")
+    logger.success("🎉 You can now run the agent!")
 
 
 def main() -> None:
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(
-        description="Fetch all papers from a conference with review data",
+        description="Fetch all papers from a conference",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Fetch NeurIPS 2025 papers
+  # Fast mode (recommended): Basic info only (5-10 minutes)
   python fetch_all_papers.py --venue NeurIPS --year 2025
+  
+  # Full mode: Include all review data (60-90 minutes)
+  python fetch_all_papers.py --venue NeurIPS --year 2025 --with-reviews
   
   # Force re-download even if cache exists
   python fetch_all_papers.py --venue NeurIPS --year 2025 --force
-  
-  # Fetch from a different conference
-  python fetch_all_papers.py --venue ICML --year 2024
 
 Note:
-  The first run will take 60-90 minutes, but subsequent runs use the cache.
-  Progress is automatically saved every 100 papers.
+  Fast mode (default) fetches basic paper info only.
+  Reviews are fetched on-demand when you run the agent.
+  Use --with-reviews if you want all review data upfront.
         """
     )
     
@@ -639,11 +692,16 @@ Note:
         action="store_true",
         help="Force re-download even if cache exists"
     )
+    parser.add_argument(
+        "--with-reviews",
+        action="store_true",
+        help="Fetch full review data (slower, 60-90 min). Default: basic info only (5-10 min)"
+    )
     
     args = parser.parse_args()
     
     try:
-        fetch_all_papers(args.venue, args.year, args.force)
+        fetch_all_papers(args.venue, args.year, args.force, args.with_reviews)
     except KeyboardInterrupt:
         logger.warning("\nInterrupted by user. Progress has been saved.")
         logger.info("Run the script again to resume from the last checkpoint.")

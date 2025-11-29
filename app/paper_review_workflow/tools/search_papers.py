@@ -32,7 +32,10 @@ def is_accepted(paper: dict[str, Any]) -> bool:
         bool: True if accepted, False otherwise
     """
     decision = paper.get("decision", "").lower()
-    return "accept" in decision
+    # Exclude Reject and N/A - everything else is considered accepted
+    if not decision or decision == "n/a":
+        return False
+    return "reject" not in decision
 
 
 @tool

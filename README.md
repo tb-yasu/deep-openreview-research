@@ -41,7 +41,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit the .env file to set your actual API key
 
-# 4. Fetch paper data (first time only, 60-90 minutes)
+# 4. Fetch paper data (first time only, 5-10 minutes)
 python fetch_all_papers.py --venue NeurIPS --year 2025
 
 # 5. Run paper review
@@ -140,10 +140,16 @@ $env:OPENAI_API_KEY="your-api-key-here"
 #### 5. Fetch Paper Data
 
 ```bash
+# Fast mode (default): Basic info only (5-10 minutes)
 python fetch_all_papers.py --venue NeurIPS --year 2025
+
+# Full mode: Include all review data upfront (60-90 minutes)
+python fetch_all_papers.py --venue NeurIPS --year 2025 --with-reviews
 ```
 
-**Note**: The first run takes 60-90 minutes, but subsequent runs use local cache.
+**Note**: 
+- Fast mode (default) fetches basic paper info in 5-10 minutes. Reviews are fetched on-demand when you run the agent.
+- Full mode with `--with-reviews` takes 60-90 minutes but pre-fetches all review data.
 
 ## 💻 Basic Usage
 
@@ -307,8 +313,9 @@ python run_deep_research.py \
 
 ```
 deep-openreview-research/
-├── fetch_all_papers.py      # Paper data fetching script
+├── fetch_all_papers.py      # Paper data fetching script (basic info)
 ├── run_deep_research.py     # Main execution script
+├── review_cache.py          # On-demand review fetching with cache
 ├── indexer.py               # Vector index builder (for hybrid search)
 ├── search_engine.py         # Hybrid search engine (RRF)
 ├── quickstart.sh            # Quick start script
@@ -449,7 +456,7 @@ If using old cache, the dynamic field detection feature may not be included. Re-
 python fetch_all_papers.py --venue NeurIPS --year 2025 --force
 ```
 
-**Note**: Re-fetching takes 60-90 minutes.
+**Note**: Re-fetching takes 5-10 minutes (or 60-90 minutes with `--with-reviews`).
 
 ### ICML shows only one review score
 

@@ -78,11 +78,21 @@ class EvaluatePapersNode:
                         "confidence_avg": paper.confidence_avg,
                         "decision": paper.decision,
                     }
+                elif paper.reviews is not None:
+                    # Fast mode: evaluate without review data (keyword-based relevance only)
+                    logger.debug(f"Fast mode: evaluating {paper.id} without review data")
+                    metadata = {
+                        "reviews": paper.reviews or [],
+                        "rating_avg": paper.rating_avg,
+                        "confidence_avg": paper.confidence_avg,
+                        "decision": paper.decision or "N/A",
+                    }
                 else:
-                    # Fetch from API
-                    logger.debug(f"Fetching review data from API for {paper.id}")
+                    # Legacy: Fetch from API (only when paper.reviews is None)
+                    logger.info(f"Fetching metadata for paper: {paper.id}")
                     result = self.tool.invoke({"paper_id": paper.id})
                     metadata = json.loads(result)
+                    logger.info(f"Fetched metadata for paper: {paper.title}")
                     
                     # Error check
                     if isinstance(metadata, dict) and "error" in metadata:
